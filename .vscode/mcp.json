@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "wot-ui": {
+      "command": "wot",
+      "args": ["mcp"]
+    }
+  },
+  "inputs": []
+}
