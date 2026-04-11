@@ -25,7 +25,7 @@ jobs:
       - run: pnpm i -g @antfu/ni
       - run: nci
       - run: nr lint
-      - run: nr typecheck
+      - run: pnpm typecheck:all
 
   test:
     runs-on: ${{ matrix.os }}
@@ -49,5 +49,5 @@ jobs:
 
       - run: pnpm i -g @antfu/ni
       - run: nci
-      - run: nr build
-      - run: nr test
+      - run: pnpm build:all
+      - run: pnpm test:all

@@ -1,0 +1,70 @@
+name: Sync Wot UI Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      wot_ref:
+        description: wot-ui 仓库的分支、tag 或 commit
+        required: false
+        default: main
+  repository_dispatch:
+    types:
+      - wot-ui-release
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Resolve source ref
+        id: ref
+        run: |
+          if [ -n "${{ github.event.client_payload.ref }}" ]; then
+            echo "value=${{ github.event.client_payload.ref }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ inputs.wot_ref }}" ]; then
+            echo "value=${{ inputs.wot_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Checkout wot-ui source
+        uses: actions/checkout@v4
+        with:
+          repository: wot-ui/wot-ui
+          ref: ${{ steps.ref.outputs.value }}
+          path: .cache/wot-ui
+
+      - name: Extract latest metadata
+        run: pnpm extract:cli --wot-dir .cache/wot-ui --output packages/cli/data/v2.json
+
+      - name: Validate synced data
+        run: |
+          pnpm test:cli
+          pnpm build:cli
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/sync-wot-ui-data
+          commit-message: 'chore: sync wot-ui data'
+          title: 'chore: sync wot-ui data'
+          body: |
+            Synced wot-ui metadata from `${{ steps.ref.outputs.value }}`.
+
+            This PR was generated automatically by `.github/workflows/sync.yml`.
+          delete-branch: true

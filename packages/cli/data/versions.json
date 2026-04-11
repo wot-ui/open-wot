@@ -1,0 +1,10 @@
+{
+  "latest": "2.0.0-alpha.5",
+  "supported": [
+    "2.0.0-alpha.5"
+  ],
+  "aliases": {
+    "v2": "2.0.0-alpha.5",
+    "latest": "2.0.0-alpha.5"
+  }
+}

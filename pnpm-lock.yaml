@@ -12,9 +12,21 @@ catalogs:
     '@antfu/ni':
       specifier: ^28.0.0
       version: 28.0.0
+    '@cfworker/json-schema':
+      specifier: ^4.1.1
+      version: 4.1.1
+    '@modelcontextprotocol/server':
+      specifier: ^2.0.0-alpha.2
+      version: 2.0.0-alpha.2
+    '@vue/compiler-sfc':
+      specifier: ^3.5.13
+      version: 3.5.13
     bumpp:
       specifier: ^10.3.2
       version: 10.3.2
+    commander:
+      specifier: ^14.0.0
+      version: 14.0.2
     eslint:
       specifier: ^9.39.2
       version: 9.39.2
@@ -39,6 +51,9 @@ catalogs:
     vite:
       specifier: ^7.2.7
       version: 7.2.7
+    zod:
+      specifier: ^4.1.12
+      version: 4.3.6
   inlined:
     '@antfu/utils':
       specifier: ^9.3.0
@@ -116,6 +131,40 @@ importers:
       yaml:
         specifier: catalog:testing
         version: 2.8.2
+
+  packages/cli:
+    dependencies:
+      '@cfworker/json-schema':
+        specifier: catalog:cli
+        version: 4.1.1
+      '@modelcontextprotocol/server':
+        specifier: catalog:cli
+        version: 2.0.0-alpha.2(@cfworker/json-schema@4.1.1)
+      '@vue/compiler-sfc':
+        specifier: catalog:cli
+        version: 3.5.13
+      commander:
+        specifier: catalog:cli
+        version: 14.0.2
+      zod:
+        specifier: catalog:cli
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: catalog:types
+        version: 25.0.1
+      tsdown:
+        specifier: catalog:cli
+        version: 0.17.3(publint@0.3.16)(synckit@0.11.11)(typescript@5.9.3)
+      tsx:
+        specifier: catalog:cli
+        version: 4.21.0
+      typescript:
+        specifier: catalog:cli
+        version: 5.9.3
+      vitest:
+        specifier: catalog:testing
+        version: 4.0.15(@types/node@25.0.1)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
 packages:
 
@@ -205,6 +254,9 @@ packages:
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
+
+  '@cfworker/json-schema@4.1.1':
+    resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
 
   '@clack/core@0.5.0':
     resolution: {integrity: sha512-p3y0FIOwaYRUPRcMO7+dlmLh8PSRcrjuTndsiA0WAFbWES0mLZlrjVoBRZ9DzkPFJZG6KGkJmoEAY0ZcVWTkow==}
@@ -628,6 +680,15 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@modelcontextprotocol/server@2.0.0-alpha.2':
+    resolution: {integrity: sha512-gmLgdHzlYM8L7Aw/+VE0kxjT25WKamtUSLNhdOgrJq5CrESvqVSoAfWSJJeNPUXNTluQ+dYDGFbKVitdsJtbPA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@cfworker/json-schema': ^4.1.1
+    peerDependenciesMeta:
+      '@cfworker/json-schema':
+        optional: true
 
   '@napi-rs/wasm-runtime@1.1.0':
     resolution: {integrity: sha512-Fq6DJW+Bb5jaWE69/qOE0D1TUN9+6uWhCeZpdnSBk14pjLcCWR7Q8n49PTSPHazM37JqrsdpEthXy2xn6jWWiA==}
@@ -2513,6 +2574,9 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -2599,6 +2663,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@cfworker/json-schema@4.1.1': {}
 
   '@clack/core@0.5.0':
     dependencies:
@@ -2894,6 +2960,12 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@modelcontextprotocol/server@2.0.0-alpha.2(@cfworker/json-schema@4.1.1)':
+    dependencies:
+      zod: 4.3.6
+    optionalDependencies:
+      '@cfworker/json-schema': 4.1.1
 
   '@napi-rs/wasm-runtime@1.1.0':
     dependencies:
@@ -4965,5 +5037,7 @@ snapshots:
   yaml@2.8.2: {}
 
   yocto-queue@0.1.0: {}
+
+  zod@4.3.6: {}
 
   zwitch@2.0.4: {}
