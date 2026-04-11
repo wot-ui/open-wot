@@ -1,7 +1,7 @@
 {
   "name": "open-wot",
   "type": "module",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "packageManager": "pnpm@10.25.0",
   "description": "wot-ui 的 AI 能力工具集：Skills、MCP 协议与 CLI 工具等",
   "license": "MIT",
