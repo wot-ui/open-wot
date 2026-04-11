@@ -1,7 +1,7 @@
 {
   "name": "open-wot",
   "type": "module",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.2",
   "packageManager": "pnpm@10.25.0",
   "description": "wot-ui 的 AI 能力工具集：Skills、MCP 协议与 CLI 工具等",
   "license": "MIT",
@@ -33,7 +33,7 @@
     "extract:clone": "rm -rf /tmp/open-wot-wot-ui && git clone --depth 1 https://github.com/wot-ui/wot-ui.git /tmp/open-wot-wot-ui && pnpm extract:cli --wot-dir /tmp/open-wot-wot-ui --output data/v2.json",
     "lint": "eslint",
     "prepublishOnly": "nr build",
-    "release": "bumpp",
+    "release": "bumpp -r",
     "start": "tsx src/index.ts",
     "test": "vitest run",
     "test:all": "pnpm test && pnpm test:cli",
