@@ -1,7 +1,7 @@
 {
   "name": "@wot-ui/cli",
   "type": "module",
-  "version": "0.0.1-beta.3",
+  "version": "0.0.1-beta.4",
   "description": "CLI, MCP and skills toolkit for wot-ui",
   "license": "MIT",
   "homepage": "https://github.com/wot-ui/open-wot#readme",
