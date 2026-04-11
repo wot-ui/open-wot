@@ -1,5 +1,6 @@
 import type { Command } from 'commander'
 import type { ComponentMeta, CssVarMeta, OutputLanguage, QueryOptions } from '../types'
+import { writeJson } from '../utils/output'
 
 export function addQueryOptions(command: Command): Command {
   return command
@@ -20,7 +21,7 @@ export function normalizeQueryOptions(options: Record<string, unknown>): QueryOp
 
 export function printError(message: string, format: QueryOptions['format']): void {
   if (format === 'json')
-    console.log(JSON.stringify({ error: true, message }, null, 2))
+    writeJson({ error: true, message })
   else
     console.error(message)
 }

@@ -1,6 +1,7 @@
 import process from 'node:process'
 import { McpServer, StdioServerTransport } from '@modelcontextprotocol/server'
 import * as z from 'zod/v4'
+import packageJson from '../../package.json'
 import { WOT_EXPERT_PROMPT, WOT_PAGE_GENERATOR_PROMPT } from './prompts'
 import { registerMcpTools } from './tools'
 
@@ -8,7 +9,7 @@ export async function startMcpServer(): Promise<void> {
   const server = new McpServer(
     {
       name: 'wot-ui',
-      version: '0.0.0',
+      version: packageJson.version,
     },
     {
       instructions: 'Use wot-ui component tools before generating UI code. Only wot-ui v2 metadata is available in this server.',

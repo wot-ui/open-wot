@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import packageJson from '../package.json'
 import { registerChangelogCommand } from './commands/changelog'
 import { registerDemoCommand } from './commands/demo'
 import { registerDocCommand } from './commands/doc'
@@ -16,7 +17,7 @@ export function createCliProgram(): Command {
   program
     .name('wot')
     .description('wot-ui AI toolkit CLI')
-    .version('0.0.0')
+    .version(packageJson.version)
 
   registerListCommand(program)
   registerInfoCommand(program)

@@ -22,7 +22,10 @@ pnpm install
 
 ## 仓库结构
 
-- `packages/cli`：CLI、MCP、提取脚本、测试与离线数据
+- `src`：CLI、MCP 与项目分析源码
+- `data`：离线组件元数据
+- `scripts`：提取脚本
+- `skills`：面向 Agent 的技能说明
 - `.github/workflows`：CI、release、sync 自动化
 - `test`：根包测试
 
@@ -31,25 +34,26 @@ pnpm install
 ### 全仓库
 
 ```bash
+pnpm lint
 pnpm test:all
 pnpm build:all
 pnpm typecheck:all
 ```
 
-### CLI 子包
+### 主包
 
 ```bash
-pnpm --filter @wot-ui/cli build
-pnpm --filter @wot-ui/cli test
-pnpm --filter @wot-ui/cli typecheck
+pnpm build
+pnpm test
+pnpm typecheck
 ```
 
 ### 源码调试 CLI
 
 ```bash
-pnpm --filter @wot-ui/cli exec tsx src/index.ts list
-pnpm --filter @wot-ui/cli exec tsx src/index.ts info Button
-pnpm --filter @wot-ui/cli exec tsx src/index.ts mcp
+pnpm exec tsx src/index.ts list
+pnpm exec tsx src/index.ts info Button
+pnpm exec tsx src/index.ts mcp
 ```
 
 ### 提取最新数据
@@ -57,7 +61,7 @@ pnpm --filter @wot-ui/cli exec tsx src/index.ts mcp
 如果你本地已有 wot-ui 仓库：
 
 ```bash
-pnpm extract:cli --wot-dir ../wot-ui --output packages/cli/data/v2.json
+pnpm extract:cli --wot-dir ../wot-ui --output data/v2.json
 ```
 
 如果你希望直接拉取最新上游数据：
@@ -97,8 +101,6 @@ pnpm extract:clone
 以下文档需要保持同步：
 
 - 根目录 `README.md`
-- `packages/cli/README.md`
-- `packages/cli/README.zh-CN.md`
 - 与自动化相关的 workflow 文档说明
 
 当以下内容发生变化时，请同步更新文档：
@@ -111,7 +113,7 @@ pnpm extract:clone
 ## 自动化说明
 
 - `.github/workflows/ci.yml`：校验 lint、typecheck、build、test
-- `.github/workflows/release.yml`：发布 `@wot-ui/cli`
+- `.github/workflows/release.yml`：通过 reusable workflow 发布 `@wot-ui/cli`
 - `.github/workflows/sync.yml`：从上游 `wot-ui/wot-ui` 提取最新数据并创建 PR
 
 其中 [sync.yml](.github/workflows/sync.yml) 支持手动传入 `wot_ref`，也支持由上游 release 事件触发。

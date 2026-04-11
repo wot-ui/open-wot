@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { writeJson, writeLine } from '../utils/output'
 import { analyzeUsage } from '../utils/scanner'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
@@ -11,7 +12,7 @@ export function registerUsageCommand(program: Command): void {
       try {
         const report = analyzeUsage(resolve(dir), query.version)
         if (query.format === 'json') {
-          console.log(JSON.stringify(report, null, 2))
+          writeJson(report)
           return
         }
 
@@ -23,7 +24,7 @@ export function registerUsageCommand(program: Command): void {
         if (report.imports.length) {
           lines.push('', 'Imports:', ...report.imports.map(item => `- ${item}`))
         }
-        console.log(lines.join('\n'))
+        writeLine(lines.join('\n'))
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to analyze project usage', query.format)

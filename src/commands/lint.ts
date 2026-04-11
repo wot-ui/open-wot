@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { writeJson, writeLine } from '../utils/output'
 import { lintProject } from '../utils/scanner'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
@@ -11,12 +12,12 @@ export function registerLintCommand(program: Command): void {
       try {
         const report = lintProject(resolve(dir), query.version)
         if (query.format === 'json') {
-          console.log(JSON.stringify(report, null, 2))
+          writeJson(report)
           return
         }
 
         if (!report.issues.length) {
-          console.log(`No lint issues found. Scanned files: ${report.scannedFiles}`)
+          writeLine(`No lint issues found. Scanned files: ${report.scannedFiles}`)
           return
         }
 
@@ -24,7 +25,7 @@ export function registerLintCommand(program: Command): void {
           `Scanned files: ${report.scannedFiles}`,
           ...report.issues.map(issue => `${issue.severity.toUpperCase()} ${issue.file}:${issue.line} [${issue.rule}] ${issue.message}`),
         ]
-        console.log(lines.join('\n'))
+        writeLine(lines.join('\n'))
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to lint project', query.format)

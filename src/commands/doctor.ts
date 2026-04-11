@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { writeJson, writeLine } from '../utils/output'
 import { diagnoseProject } from '../utils/project'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
@@ -11,7 +12,7 @@ export function registerDoctorCommand(program: Command): void {
       try {
         const report = diagnoseProject(resolve(dir))
         if (query.format === 'json') {
-          console.log(JSON.stringify(report, null, 2))
+          writeJson(report)
           return
         }
 
@@ -19,7 +20,7 @@ export function registerDoctorCommand(program: Command): void {
           `Directory: ${report.dir}`,
           ...report.checks.map(check => `${check.status.toUpperCase()} ${check.name}: ${check.message}${check.suggestion ? ` | ${check.suggestion}` : ''}`),
         ]
-        console.log(lines.join('\n'))
+        writeLine(lines.join('\n'))
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to diagnose project', query.format)

@@ -1,9 +1,9 @@
 {
-  "name": "open-wot",
+  "name": "@wot-ui/cli",
   "type": "module",
   "version": "0.0.1-beta.4",
   "packageManager": "pnpm@10.25.0",
-  "description": "wot-ui 的 AI 能力工具集：Skills、MCP 协议与 CLI 工具等",
+  "description": "面向 wot-ui 的 CLI、MCP 与数据提取工具集",
   "license": "MIT",
   "funding": "https://github.com/sponsors/antfu",
   "homepage": "https://github.com/wot-ui/open-wot#readme",
@@ -21,30 +21,41 @@
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
+  "bin": {
+    "wot": "dist/index.mjs"
+  },
   "files": [
+    "data",
     "dist"
   ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsdown",
-    "build:all": "pnpm build && pnpm build:cli",
-    "build:cli": "pnpm --filter @wot-ui/cli build",
     "dev": "tsdown --watch",
-    "extract:cli": "pnpm --filter @wot-ui/cli extract",
-    "extract:clone": "rm -rf /tmp/open-wot-wot-ui && git clone --depth 1 https://github.com/wot-ui/wot-ui.git /tmp/open-wot-wot-ui && pnpm extract:cli --wot-dir /tmp/open-wot-wot-ui --output data/v2.json",
+    "extract": "tsx scripts/extract.ts",
+    "extract:cli": "pnpm extract",
+    "extract:clone": "rm -rf /tmp/open-wot-wot-ui && git clone --depth 1 https://github.com/wot-ui/wot-ui.git /tmp/open-wot-wot-ui && pnpm extract --wot-dir /tmp/open-wot-wot-ui --output data/v2.json",
     "lint": "eslint",
-    "pack:cli": "rm -rf .release && mkdir -p .release && pnpm --filter @wot-ui/cli pack --pack-destination .release",
-    "prepublishOnly": "nr build",
-    "publish:cli": "pnpm pack:cli && npm publish .release/*.tgz --access public",
-    "release": "bumpp -r",
+    "prepublishOnly": "pnpm build",
+    "release": "bumpp",
     "start": "tsx src/index.ts",
     "test": "vitest run",
-    "test:all": "pnpm test && pnpm test:cli",
-    "test:cli": "pnpm --filter @wot-ui/cli test",
+    "test:all": "pnpm test",
+    "test:cli": "pnpm test",
     "test:watch": "vitest",
-    "typecheck": "tsc",
-    "typecheck:all": "pnpm typecheck && pnpm typecheck:cli",
-    "typecheck:cli": "pnpm --filter @wot-ui/cli typecheck",
+    "typecheck": "tsc --noEmit",
+    "typecheck:all": "pnpm typecheck",
+    "typecheck:cli": "pnpm typecheck",
     "prepare": "simple-git-hooks"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "catalog:cli",
+    "@modelcontextprotocol/server": "catalog:cli",
+    "@vue/compiler-sfc": "catalog:cli",
+    "commander": "catalog:cli",
+    "zod": "catalog:cli"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:cli",
@@ -60,7 +71,6 @@
     "tsdown": "catalog:cli",
     "tsx": "catalog:cli",
     "typescript": "catalog:cli",
-    "vite": "catalog:cli",
     "vitest": "catalog:testing",
     "vitest-package-exports": "catalog:testing",
     "yaml": "catalog:testing"

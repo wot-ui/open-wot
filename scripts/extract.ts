@@ -28,7 +28,7 @@ const COMPONENT_MAP: Record<string, string[]> = {
 }
 
 function logStep(icon: string, message: string): void {
-  console.log(`${icon} [extract] ${message}`)
+  process.stdout.write(`${icon} [extract] ${message}\n`)
 }
 
 function parseArgs(argv: string[]): CliArgs {

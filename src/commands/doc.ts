@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import process from 'node:process'
 import { findComponent } from '../data/metadata'
+import { writeJson, writeLine } from '../utils/output'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
 export function registerDocCommand(program: Command): void {
@@ -16,11 +17,11 @@ export function registerDocCommand(program: Command): void {
         }
 
         if (query.format === 'json') {
-          console.log(JSON.stringify({ name: component.name, doc: component.doc }, null, 2))
+          writeJson({ name: component.name, doc: component.doc })
           return
         }
 
-        console.log(component.doc)
+        writeLine(component.doc)
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to load documentation', query.format)

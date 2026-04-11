@@ -48,9 +48,6 @@ catalogs:
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
-    vite:
-      specifier: ^7.2.7
-      version: 7.2.7
     zod:
       specifier: ^4.1.12
       version: 4.3.6
@@ -79,6 +76,22 @@ catalogs:
 importers:
 
   .:
+    dependencies:
+      '@cfworker/json-schema':
+        specifier: catalog:cli
+        version: 4.1.1
+      '@modelcontextprotocol/server':
+        specifier: catalog:cli
+        version: 2.0.0-alpha.2(@cfworker/json-schema@4.1.1)
+      '@vue/compiler-sfc':
+        specifier: catalog:cli
+        version: 3.5.13
+      commander:
+        specifier: catalog:cli
+        version: 14.0.2
+      zod:
+        specifier: catalog:cli
+        version: 4.3.6
     devDependencies:
       '@antfu/eslint-config':
         specifier: catalog:cli
@@ -119,9 +132,6 @@ importers:
       typescript:
         specifier: catalog:cli
         version: 5.9.3
-      vite:
-        specifier: catalog:cli
-        version: 7.2.7(@types/node@25.0.1)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
       vitest:
         specifier: catalog:testing
         version: 4.0.15(@types/node@25.0.1)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
@@ -131,40 +141,6 @@ importers:
       yaml:
         specifier: catalog:testing
         version: 2.8.2
-
-  packages/cli:
-    dependencies:
-      '@cfworker/json-schema':
-        specifier: catalog:cli
-        version: 4.1.1
-      '@modelcontextprotocol/server':
-        specifier: catalog:cli
-        version: 2.0.0-alpha.2(@cfworker/json-schema@4.1.1)
-      '@vue/compiler-sfc':
-        specifier: catalog:cli
-        version: 3.5.13
-      commander:
-        specifier: catalog:cli
-        version: 14.0.2
-      zod:
-        specifier: catalog:cli
-        version: 4.3.6
-    devDependencies:
-      '@types/node':
-        specifier: catalog:types
-        version: 25.0.1
-      tsdown:
-        specifier: catalog:cli
-        version: 0.17.3(publint@0.3.16)(synckit@0.11.11)(typescript@5.9.3)
-      tsx:
-        specifier: catalog:cli
-        version: 4.21.0
-      typescript:
-        specifier: catalog:cli
-        version: 5.9.3
-      vitest:
-        specifier: catalog:testing
-        version: 4.0.15(@types/node@25.0.1)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
 packages:
 

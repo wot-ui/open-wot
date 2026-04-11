@@ -1,10 +1,10 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: [
-    'src/index.ts',
-  ],
+  entry: ['src/index.ts'],
+  clean: true,
   dts: true,
-  exports: true,
-  publint: true,
+  format: ['esm'],
+  platform: 'node',
+  target: 'node20',
 })

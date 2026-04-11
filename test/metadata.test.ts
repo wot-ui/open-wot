@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { findComponent, listComponents } from '../src/data/metadata'
 
 describe('metadata', () => {
-  it('lists seeded v2 components', () => {
+  it('lists extracted v2 components', () => {
     const components = listComponents()
-    expect(components).toHaveLength(1)
-    expect(components[0]?.name).toBe('Button')
+    expect(components.length).toBeGreaterThan(50)
+    expect(components.some(component => component.name === 'Button')).toBe(true)
   })
 
   it('finds a component by name and tag', () => {

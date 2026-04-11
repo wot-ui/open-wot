@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import process from 'node:process'
 import { findComponent, listComponents } from '../data/metadata'
+import { writeJson, writeLine } from '../utils/output'
 import { addQueryOptions, formatCssVars, normalizeQueryOptions, printError } from './shared'
 
 export function registerTokenCommand(program: Command): void {
@@ -13,7 +14,7 @@ export function registerTokenCommand(program: Command): void {
             component: component.name,
             ...cssVar,
           })))
-          console.log(JSON.stringify(tokens, null, 2))
+          writeJson(tokens)
           return
         }
 
@@ -25,7 +26,7 @@ export function registerTokenCommand(program: Command): void {
         }
 
         if (query.format === 'json') {
-          console.log(JSON.stringify({ name: component.name, cssVars: formatCssVars(component.cssVars) }, null, 2))
+          writeJson({ name: component.name, cssVars: formatCssVars(component.cssVars) })
           return
         }
 
@@ -33,7 +34,7 @@ export function registerTokenCommand(program: Command): void {
           const defaultValue = cssVar.defaultValue ?? cssVar.token
           return `- ${cssVar.name}${defaultValue ? ` = ${defaultValue}` : ''}: ${cssVar.description}`
         })]
-        console.log(lines.join('\n'))
+        writeLine(lines.join('\n'))
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to query CSS variables', query.format)

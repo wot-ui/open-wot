@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import process from 'node:process'
 import { findComponent } from '../data/metadata'
+import { writeJson, writeLine } from '../utils/output'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
 export function registerDemoCommand(program: Command): void {
@@ -18,10 +19,10 @@ export function registerDemoCommand(program: Command): void {
         const demos = component.demos ?? []
         if (!demoName) {
           if (query.format === 'json') {
-            console.log(JSON.stringify({ component: component.name, demos }, null, 2))
+            writeJson({ component: component.name, demos })
             return
           }
-          console.log(demos.map(demo => `- ${demo.name}: ${demo.title}`).join('\n'))
+          writeLine(demos.map(demo => `- ${demo.name}: ${demo.title}`).join('\n'))
           return
         }
 
@@ -33,11 +34,11 @@ export function registerDemoCommand(program: Command): void {
         }
 
         if (query.format === 'json') {
-          console.log(JSON.stringify({ component: component.name, demo }, null, 2))
+          writeJson({ component: component.name, demo })
           return
         }
 
-        console.log(demo.code)
+        writeLine(demo.code)
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to load demo', query.format)

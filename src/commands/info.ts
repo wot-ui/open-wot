@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import process from 'node:process'
 import { findComponent } from '../data/metadata'
+import { writeJson, writeLine } from '../utils/output'
 import { addQueryOptions, getComponentDescription, getComponentLabel, normalizeQueryOptions, printError } from './shared'
 
 export function registerInfoCommand(program: Command): void {
@@ -16,7 +17,7 @@ export function registerInfoCommand(program: Command): void {
         }
 
         if (query.format === 'json') {
-          console.log(JSON.stringify(component, null, 2))
+          writeJson(component)
           return
         }
 
@@ -39,7 +40,7 @@ export function registerInfoCommand(program: Command): void {
             return `- ${cssVar.name}${defaultValue ? ` = ${defaultValue}` : ''}: ${cssVar.description}`
           }),
         ]
-        console.log(lines.join('\n'))
+        writeLine(lines.join('\n'))
       }
       catch (error) {
         printError(error instanceof Error ? error.message : 'Failed to load component info', query.format)

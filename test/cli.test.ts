@@ -11,11 +11,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createCliProgram } from '../src/app'
 
 describe('cli', () => {
-  const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+  const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
   const error = vi.spyOn(console, 'error').mockImplementation(() => {})
 
   beforeEach(() => {
-    log.mockClear()
+    stdout.mockClear()
     error.mockClear()
     process.exitCode = undefined
   })
@@ -23,7 +23,7 @@ describe('cli', () => {
   it('prints component list as json', async () => {
     await createCliProgram().parseAsync(['list', '--format', 'json'], { from: 'user' })
 
-    const output = log.mock.calls[0]?.[0]
+    const output = stdout.mock.calls[0]?.[0]
     expect(typeof output).toBe('string')
     expect(output).toContain('Button')
   })
