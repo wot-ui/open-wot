@@ -1,18 +1,17 @@
 {
-  "name": "pkg-placeholder",
+  "name": "open-wot",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1-beta.1",
   "packageManager": "pnpm@10.25.0",
-  "description": "_description_",
-  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "description": "wot-ui 的 AI 能力工具集：Skills、MCP 协议与 CLI 工具等",
   "license": "MIT",
   "funding": "https://github.com/sponsors/antfu",
-  "homepage": "https://github.com/antfu/pkg-placeholder#readme",
+  "homepage": "https://github.com/wot-ui/open-wot#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/antfu/pkg-placeholder.git"
+    "url": "git+https://github.com/wot-ui/open-wot.git"
   },
-  "bugs": "https://github.com/antfu/pkg-placeholder/issues",
+  "bugs": "https://github.com/wot-ui/open-wot/issues",
   "keywords": [],
   "sideEffects": false,
   "exports": {
@@ -27,13 +26,22 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "build:all": "pnpm build && pnpm build:cli",
+    "build:cli": "pnpm --filter @wot-ui/cli build",
     "dev": "tsdown --watch",
+    "extract:cli": "pnpm --filter @wot-ui/cli extract",
+    "extract:clone": "rm -rf /tmp/open-wot-wot-ui && git clone --depth 1 https://github.com/wot-ui/wot-ui.git /tmp/open-wot-wot-ui && pnpm extract:cli --wot-dir /tmp/open-wot-wot-ui --output data/v2.json",
     "lint": "eslint",
     "prepublishOnly": "nr build",
     "release": "bumpp",
     "start": "tsx src/index.ts",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:all": "pnpm test && pnpm test:cli",
+    "test:cli": "pnpm --filter @wot-ui/cli test",
+    "test:watch": "vitest",
     "typecheck": "tsc",
+    "typecheck:all": "pnpm typecheck && pnpm typecheck:cli",
+    "typecheck:cli": "pnpm --filter @wot-ui/cli typecheck",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
