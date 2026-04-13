@@ -14,6 +14,7 @@ argument-hint: '组件名、页面场景、问题描述或主题定制需求'
 - 需要生成或重构 `uni-app + Vue 3 + TypeScript` 的 wot-ui 页面或组件代码。
 - 需要在 `ConfigProvider`、主题变量、暗黑模式、国际化、反馈类 hooks、表单等场景下给出正确做法。
 - 需要排查文档中常见的 `Toast`、`Dialog`、`Popup`、`Tabs`、`Slider`、样式覆盖问题。
+- 用户只是泛化地提到主题定制，但还没有明确要求按“单文件主题 SCSS + App.vue 只 `@use`”的结构生成时。
 
 ## 推荐流程
 
@@ -21,6 +22,7 @@ argument-hint: '组件名、页面场景、问题描述或主题定制需求'
 2. 再根据项目实际安装方式决定导入路径与集成方式。
 3. 优先复用现成的 `wd-*` 组件、hooks、主题变量与组合模式，不要退化成原生标签堆砌。
 4. 如果问题涉及约束或坑位，再查阅 [参考知识](./references/overview.md)。
+5. 如果用户明确要求生成 `src/themes/styles/{主题名}.scss` 单文件主题，并把挂载逻辑收进主题文件，优先切换到 `create-wot-ui-theme` skill。
 
 ## 查询顺序
 
