@@ -19,20 +19,8 @@ function getDependencyVersion(pkg: PackageJsonLike | undefined, name: string): s
 }
 
 function detectWotDependency(pkg: PackageJsonLike | undefined): string | undefined {
-  const names = ['wot-design-uni', 'wot-ui']
-  for (const name of names) {
-    const version = getDependencyVersion(pkg, name)
-    if (version)
-      return `${name}@${version}`
-  }
-
-  if (pkg?.dependencies) {
-    const scoped = Object.keys(pkg.dependencies).find(name => name.includes('wot'))
-    if (scoped)
-      return `${scoped}@${pkg.dependencies[scoped]}`
-  }
-
-  return undefined
+  const version = getDependencyVersion(pkg, '@wot-ui/ui')
+  return version ? `@wot-ui/ui@${version}` : undefined
 }
 
 function createCheck(name: string, status: DoctorCheck['status'], message: string, suggestion?: string): DoctorCheck {
@@ -57,7 +45,7 @@ export function diagnoseProject(targetDir: string): DoctorReport {
   if (wotVersion)
     checks.push(createCheck('wot-ui-installed', 'pass', `Detected ${wotVersion}.`))
   else
-    checks.push(createCheck('wot-ui-installed', 'fail', 'No wot-ui dependency detected.', 'Add wot-ui or wot-design-uni to dependencies before using doctor, usage, and lint.'))
+    checks.push(createCheck('wot-ui-installed', 'fail', 'No @wot-ui/ui dependency detected.', 'Add @wot-ui/ui to dependencies before using doctor, usage, and lint.'))
 
   const vueVersion = getDependencyVersion(pkg, 'vue')
   if (vueVersion)
