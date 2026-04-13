@@ -19,13 +19,12 @@ describe('shared command utilities', () => {
     const command = addQueryOptions(new Command('demo'))
     const optionNames = command.options.map(option => option.long)
     expect(optionNames).toContain('--format')
-    expect(optionNames).toContain('--lang')
     expect(optionNames).toContain('--version')
   })
 
   it('normalizes query options', () => {
-    expect(normalizeQueryOptions({})).toEqual({ format: 'text', lang: 'zh', version: undefined })
-    expect(normalizeQueryOptions({ format: 'json', lang: 'en', version: 'v2' })).toEqual({ format: 'json', lang: 'en', version: 'v2' })
+    expect(normalizeQueryOptions({})).toEqual({ format: 'text', version: undefined })
+    expect(normalizeQueryOptions({ format: 'json', version: 'v2' })).toEqual({ format: 'json', version: 'v2' })
   })
 
   it('prints error in json mode', () => {
@@ -33,12 +32,10 @@ describe('shared command utilities', () => {
     expect(writeJson).toHaveBeenCalledWith({ error: true, message: 'oops' })
   })
 
-  it('formats component labels and descriptions by language', () => {
+  it('formats component labels and descriptions', () => {
     const component = { name: 'Button', nameZh: '按钮', description: 'button', descriptionZh: '按钮' } as any
-    expect(getComponentLabel(component, 'zh')).toBe('Button 按钮')
-    expect(getComponentLabel(component, 'en')).toBe('Button')
-    expect(getComponentDescription(component, 'zh')).toBe('按钮')
-    expect(getComponentDescription(component, 'en')).toBe('button')
+    expect(getComponentLabel(component)).toBe('Button 按钮')
+    expect(getComponentDescription(component)).toBe('按钮')
   })
 
   it('formats css variables with fallback values', () => {

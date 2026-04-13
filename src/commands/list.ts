@@ -15,7 +15,7 @@ export function registerListCommand(program: Command): void {
           return
         }
 
-        const lines = components.map(component => `- ${getComponentLabel(component, query.lang)} (${component.tag}): ${getComponentDescription(component, query.lang)}`)
+        const lines = components.map(component => `- ${getComponentLabel(component)} (${component.tag}): ${getComponentDescription(component)}`)
         writeLine(lines.join('\n'))
       }
       catch (error) {

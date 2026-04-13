@@ -71,11 +71,9 @@ export interface VersionsFile {
 }
 
 export type OutputFormat = 'json' | 'markdown' | 'text'
-export type OutputLanguage = 'en' | 'zh'
 
 export interface QueryOptions {
   format: OutputFormat
-  lang: OutputLanguage
   version?: string
 }
 

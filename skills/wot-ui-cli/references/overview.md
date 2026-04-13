@@ -88,8 +88,6 @@
 
 - `--format text`
 - `--format json`
-- `--lang zh`
-- `--lang en`
 - `--version v2`
 
 ## Install And Run

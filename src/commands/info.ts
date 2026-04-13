@@ -22,8 +22,8 @@ export function registerInfoCommand(program: Command): void {
         }
 
         const lines = [
-          `${getComponentLabel(component, query.lang)} (${component.tag})`,
-          getComponentDescription(component, query.lang),
+          `${getComponentLabel(component)} (${component.tag})`,
+          getComponentDescription(component),
           '',
           'Props:',
           ...component.props.map(prop => `- ${prop.name}: ${prop.type}${prop.default ? ` = ${prop.default}` : ''} | ${prop.description}`),

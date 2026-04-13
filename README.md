@@ -68,8 +68,6 @@ wot mcp
 
 - `--format text`
 - `--format json`
-- `--lang zh`
-- `--lang en`
 - `--version v2`
 
 ## MCP 集成
