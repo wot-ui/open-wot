@@ -6,20 +6,11 @@ Skills 是 AI 的“超能力模板”，是一套完整的、可复用的、能
 
 当前仓库提供以下 AI 技能，可供 AI 智能体根据任务需求加载：
 
-### 1. `wot-ui-v2`
-- **描述**：处理 wot-ui v2 组件库日常开发的核心技能。
-- **适用场景**：组件选型、API 查询、生成 Vue3 + uni-app 页面代码、排查常见组件坑位（如 Toast, Dialog 挂载等）。
-- **入口**：[skills/wot-ui-v2/SKILL.md](./wot-ui-v2/SKILL.md)
-
-### 2. `wot-ui-cli`
-- **描述**：专门用于回答、使用和调试 `@wot-ui/cli` 工具本身的技能。
-- **适用场景**：查询 CLI 命令用法（list, info, doc 等）、配置 MCP Server、本地调试 CLI 源码、执行离线数据提取。
-- **入口**：[skills/wot-ui-cli/SKILL.md](./wot-ui-cli/SKILL.md)
-
-### 3. `create-wot-ui-theme`
-- **描述**：生成 wot-ui 单文件主题 SCSS 的专项技能。
-- **适用场景**：需要为 wot-ui 定制品牌主题，且要求遵循“单文件包含 mixin 和挂载选择器、App.vue 仅作 `@use` 引入”的约束时使用。
-- **入口**：[skills/create-wot-ui-theme/SKILL.md](./create-wot-ui-theme/SKILL.md)
+| Skill | 描述 | 适用场景 | 入口 |
+| --- | --- | --- | --- |
+| `wot-ui-v2` | 处理 wot-ui v2 组件库日常开发的核心技能。 | 组件选型、API 查询、生成 Vue3 + uni-app 页面代码、排查常见组件坑位（如 Toast, Dialog 挂载等）。 | [SKILL.md](./wot-ui-v2/SKILL.md) |
+| `wot-ui-cli` | 专门用于回答、使用和调试 `@wot-ui/cli` 工具本身的技能。 | 查询 CLI 命令用法（list, info, doc 等）、配置 MCP Server、本地调试 CLI 源码、执行离线数据提取。 | [SKILL.md](./wot-ui-cli/SKILL.md) |
+| `create-wot-ui-theme` | 生成 wot-ui 单文件主题 SCSS 的专项技能。 | 需要为 wot-ui 定制品牌主题，且要求遵循“单文件包含 mixin 和挂载选择器、App.vue 仅作 `@use` 引入”的约束时使用。 | [SKILL.md](./create-wot-ui-theme/SKILL.md) |
 
 ## 安装
 
@@ -33,5 +24,4 @@ npx skills add wot-ui/open-wot
 
 ## 延伸阅读
 
-- [llms.txt](/guide/llms-txt)
 - [Agent Skills、Rules、Prompt、MCP，一文把它们理清楚了](https://juejin.cn/post/7599268297201958950)
