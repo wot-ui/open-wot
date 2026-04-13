@@ -9,37 +9,54 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint:
+  lint-and-typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
+          version: 10
           run_install: false
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 20
           cache: pnpm
 
-      - run: pnpm i -g @antfu/ni
-      - run: nci
-      - run: nr lint
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm typecheck:all
 
-  test:
+  build-and-test:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        node: [lts/*]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            node: 20
+          - os: ubuntu-latest
+            node: 22
+          - os: windows-latest
+            node: 20
+          - os: macos-latest
+            node: 20
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
+          version: 10
           run_install: false
       - name: Set node ${{ matrix.node }}
         uses: actions/setup-node@v4
@@ -47,7 +64,6 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
 
-      - run: pnpm i -g @antfu/ni
-      - run: nci
-      - run: pnpm build:all
-      - run: pnpm test:all
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test

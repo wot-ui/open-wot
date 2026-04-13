@@ -1,12 +1,19 @@
 catalogMode: prefer
+
 ignoreWorkspaceRootCheck: true
+
 shellEmulator: true
+
 trustPolicy: no-downgrade
 
 packages:
   - playground
   - docs
   - examples/*
+
+catalog:
+  '@vitest/coverage-v8': 4.0.15
+  baseline-browser-mapping: ^2.10.18
 
 catalogs:
   cli:
@@ -34,6 +41,7 @@ catalogs:
     yaml: ^2.8.2
   types:
     '@types/node': ^25.0.1
+
 onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks

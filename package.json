@@ -42,8 +42,7 @@
     "release": "bumpp",
     "start": "tsx src/index.ts",
     "test": "vitest run",
-    "test:all": "pnpm test",
-    "test:cli": "pnpm test",
+    "test:coverage": "vitest run --coverage --coverage.reporter=lcov --coverage.reporter=text",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "typecheck:all": "pnpm typecheck",
@@ -62,6 +61,8 @@
     "@antfu/ni": "catalog:cli",
     "@antfu/utils": "catalog:inlined",
     "@types/node": "catalog:types",
+    "@vitest/coverage-v8": "catalog:",
+    "baseline-browser-mapping": "catalog:",
     "bumpp": "catalog:cli",
     "eslint": "catalog:cli",
     "lint-staged": "catalog:cli",
@@ -79,6 +80,6 @@
     "pre-commit": "pnpm i --frozen-lockfile --ignore-scripts --offline && npx lint-staged"
   },
   "lint-staged": {
-    "*": "eslint --fix"
+    "*": "eslint --fix --no-warn-ignored"
   }
 }
