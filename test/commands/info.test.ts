@@ -59,4 +59,13 @@ describe('info command', () => {
     expect(error).toHaveBeenCalledWith('Component not found: Unknown')
     expect(process.exitCode).toBe(1)
   })
+
+  it('passes --version option to findComponent', async () => {
+    const program = new Command()
+    registerInfoCommand(program)
+
+    await runCli(program, ['info', 'Button', '--version', '2.0.0'])
+
+    expect(findComponent).toHaveBeenCalledWith('Button', '2.0.0')
+  })
 })

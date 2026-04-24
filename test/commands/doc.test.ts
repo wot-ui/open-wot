@@ -50,4 +50,13 @@ describe('doc command', () => {
     expect(error).toHaveBeenCalledWith('Documentation not found: Button')
     expect(process.exitCode).toBe(1)
   })
+
+  it('passes --version option to findComponent', async () => {
+    const program = new Command()
+    registerDocCommand(program)
+
+    await runCli(program, ['doc', 'Button', '--version', '2.0.0'])
+
+    expect(findComponent).toHaveBeenCalledWith('Button', '2.0.0')
+  })
 })

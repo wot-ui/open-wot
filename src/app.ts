@@ -17,7 +17,7 @@ export function createCliProgram(): Command {
   program
     .name('wot')
     .description('wot-ui AI toolkit CLI')
-    .version(packageJson.version)
+    .version(packageJson.version, '-V', 'output the current version')
 
   registerListCommand(program)
   registerInfoCommand(program)
