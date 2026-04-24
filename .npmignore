@@ -1,6 +1,3 @@
-# Exclude raw JSON data files — only .json.gz are published
-data/*.json
-
 # Dev-only files
 scripts/
 test/

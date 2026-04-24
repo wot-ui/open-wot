@@ -40,7 +40,7 @@
     "sync:clone": "rm -rf /tmp/open-wot-wot-ui && git clone --filter=tree:0 --no-checkout https://github.com/wot-ui/wot-ui.git /tmp/open-wot-wot-ui && pnpm sync --wot-dir /tmp/open-wot-wot-ui",
     "compress": "tsx scripts/compress.ts",
     "lint": "eslint",
-    "prepublishOnly": "pnpm compress && pnpm build",
+    "prepublishOnly": "pnpm build && pnpm compress",
     "release": "bumpp",
     "start": "tsx src/index.ts",
     "test": "vitest run",
