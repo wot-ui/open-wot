@@ -23,8 +23,11 @@ describe('shared command utilities', () => {
   })
 
   it('normalizes query options', () => {
-    expect(normalizeQueryOptions({})).toEqual({ format: 'text', version: undefined })
-    expect(normalizeQueryOptions({ format: 'json', version: 'v2' })).toEqual({ format: 'json', version: 'v2' })
+    // version is always resolved via detectVersion (never undefined)
+    const defaultResult = normalizeQueryOptions({})
+    expect(defaultResult.format).toBe('text')
+    expect(typeof defaultResult.version).toBe('string')
+    expect(normalizeQueryOptions({ format: 'json', version: 'v2' }).format).toBe('json')
   })
 
   it('prints error in json mode', () => {

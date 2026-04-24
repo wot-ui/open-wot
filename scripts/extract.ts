@@ -1,5 +1,6 @@
 import type { ChangelogEntry, ComponentMeta, CssVarMeta, DemoMeta, EventMeta, MetadataFile, PropMeta, SlotMeta, VersionsFile } from '../src/types'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+
 import { basename, dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 
@@ -217,7 +218,15 @@ function inferTag(filePath: string): string {
   return `wd-${fileName}`
 }
 
-function parseComponentMarkdown(filePath: string, wotDir: string): ComponentMeta {
+function readWotVersion(wotDir: string): string {
+  const pkgPath = join(wotDir, 'package.json')
+  if (!existsSync(pkgPath))
+    return 'unknown'
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+  return pkg.version ?? 'unknown'
+}
+
+function parseComponentMarkdown(filePath: string, wotDir: string, version: string): ComponentMeta {
   const markdown = readFileSync(filePath, 'utf8')
   const titleLine = markdown.split('\n').find(line => line.startsWith('# '))?.replace(/^#\s+/, '') ?? basename(filePath, '.md')
   const [name, nameZh = ''] = titleLine.split(/\s+/)
@@ -235,7 +244,7 @@ function parseComponentMarkdown(filePath: string, wotDir: string): ComponentMeta
     category: '未分类',
     description: descriptionZh,
     descriptionZh,
-    since: '2.0.0-alpha.5',
+    since: version,
     doc: markdown,
     props: parseProps(propsSection?.body ?? ''),
     events: parseEvents(eventsSection?.body ?? ''),
@@ -285,8 +294,11 @@ function main(): void {
   const componentFiles = readdirSync(docsDir).filter(file => file.endsWith('.md'))
   logStep('📚', `found ${componentFiles.length} component docs in ${docsDir}`)
 
+  const version = readWotVersion(wotDir)
+  logStep('🏷️', `wot-ui version: ${version}`)
+
   const components = componentFiles
-    .map(file => parseComponentMarkdown(join(docsDir, file), wotDir))
+    .map(file => parseComponentMarkdown(join(docsDir, file), wotDir, version))
     .filter(component => component.name && component.tag)
     .sort((left, right) => left.name.localeCompare(right.name))
 
@@ -294,29 +306,50 @@ function main(): void {
   logStep('🧩', `parsed ${components.length} components and ${changelog.length} changelog entries`)
 
   const metadata: MetadataFile = {
-    version: '2.0.0-alpha.5',
+    version,
     generatedAt: new Date().toISOString(),
     components,
     changelog,
   }
 
   mkdirSync(dirname(outputFile), { recursive: true })
-  writeFileSync(outputFile, `${JSON.stringify(metadata, null, 2)}\n`)
 
-  const versions: VersionsFile = {
-    latest: metadata.version,
-    supported: [metadata.version],
-    aliases: {
-      v2: metadata.version,
-      latest: metadata.version,
-    },
+  // Write snapshot file (data/v{version}.json). Skip if already exists.
+  const snapshotFile = join(dirname(outputFile), `v${version}.json`)
+  if (snapshotFile !== outputFile) {
+    if (!existsSync(snapshotFile)) {
+      writeFileSync(snapshotFile, `${JSON.stringify(metadata, null, 2)}\n`)
+      logStep('📸', `wrote snapshot to ${snapshotFile}`)
+    }
+    else {
+      logStep('⏭️', `snapshot ${snapshotFile} already exists, skipping`)
+    }
   }
 
-  const versionsPath = join(dirname(outputFile), 'versions.json')
-  writeFileSync(versionsPath, `${JSON.stringify(versions, null, 2)}\n`)
+  // Write the requested output file (major alias or snapshot when called from sync.ts)
+  writeFileSync(outputFile, `${JSON.stringify(metadata, null, 2)}\n`)
+  logStep('✅', `wrote to ${outputFile}`)
 
-  logStep('✅', `wrote metadata to ${outputFile}`)
-  logStep('📝', `wrote versions to ${versionsPath}`)
+  // Update versions.json (nested format: { "v2": { "2.0": "2.0.4" } })
+  const versionsPath = join(dirname(outputFile), 'versions.json')
+  const versionsIndex: VersionsFile = existsSync(versionsPath)
+    ? JSON.parse(readFileSync(versionsPath, 'utf8'))
+    : {}
+  if (!versionsIndex.v2)
+    versionsIndex.v2 = {}
+  // Only stable releases (no pre-release suffix) go into the minor→patch map.
+  // Only update if the new patch is newer than what is already recorded.
+  if (!version.includes('-')) {
+    const parts = version.split('.')
+    const minorKey = `${parts[0]}.${parts[1]}`
+    const existing = versionsIndex.v2[minorKey]
+    const existingPatch = existing ? Number(existing.split('.').at(-1)) : -1
+    const newPatch = Number(parts[2])
+    if (newPatch >= existingPatch)
+      versionsIndex.v2[minorKey] = version
+  }
+  writeFileSync(versionsPath, `${JSON.stringify(versionsIndex, null, 2)}\n`)
+  logStep('📝', `updated versions to ${versionsPath}`)
 }
 
 main()

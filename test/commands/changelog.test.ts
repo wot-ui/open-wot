@@ -12,6 +12,7 @@ vi.mock('../../src/data/loader', () => ({
 
 vi.mock('../../src/data/version', () => ({
   resolveVersion: vi.fn(() => 'v2'),
+  detectVersion: vi.fn(() => ({ version: '2.0.4', source: 'fallback' })),
 }))
 
 vi.mock('../../src/utils/output', () => ({

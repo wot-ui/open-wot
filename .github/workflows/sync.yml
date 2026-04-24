@@ -1,12 +1,14 @@
 name: Sync Wot UI Data
 
 on:
+  schedule:
+    - cron: '0 2 * * *' # Daily at 02:00 UTC
   workflow_dispatch:
     inputs:
       wot_ref:
-        description: wot-ui 仓库的分支、tag 或 commit
+        description: wot-ui 仓库的分支、tag 或 commit（留空则全量多版本同步）
         required: false
-        default: main
+        default: ''
   repository_dispatch:
     types:
       - wot-ui-release
@@ -29,42 +31,72 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Resolve source ref
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check if sync needed
+        id: check
+        run: |
+          REMOTE_VERSION=$(npm view @wot-ui/ui version 2>/dev/null || echo "")
+          LOCAL_VERSION=$(node -e "const f='data/v2.json'; const fs=require('fs'); console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).version:'')" 2>/dev/null || echo "")
+          echo "remote=$REMOTE_VERSION"
+          echo "local=$LOCAL_VERSION"
+          if [ "$REMOTE_VERSION" != "$LOCAL_VERSION" ] && [ -n "$REMOTE_VERSION" ]; then
+            echo "needs_sync=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "needs_sync=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_sync=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Resolve source ref (single-version mode)
         id: ref
+        if: steps.check.outputs.needs_sync == 'true'
         run: |
           if [ -n "${{ github.event.client_payload.ref }}" ]; then
             echo "value=${{ github.event.client_payload.ref }}" >> "$GITHUB_OUTPUT"
           elif [ -n "${{ inputs.wot_ref }}" ]; then
             echo "value=${{ inputs.wot_ref }}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=main" >> "$GITHUB_OUTPUT"
+            echo "value=" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: pnpm install --frozen-lockfile
+      - name: Clone wot-ui (full tag history) for multi-version sync
+        if: steps.check.outputs.needs_sync == 'true' && steps.ref.outputs.value == ''
+        run: |
+          git clone --filter=tree:0 --no-checkout \
+            https://github.com/wot-ui/wot-ui.git .cache/wot-ui
 
-      - name: Checkout wot-ui source
+      - name: Sync all v2 snapshots (multi-version)
+        if: steps.check.outputs.needs_sync == 'true' && steps.ref.outputs.value == ''
+        run: pnpm sync --wot-dir .cache/wot-ui
+
+      - name: Checkout wot-ui (single-version mode)
+        if: steps.check.outputs.needs_sync == 'true' && steps.ref.outputs.value != ''
         uses: actions/checkout@v4
         with:
           repository: wot-ui/wot-ui
           ref: ${{ steps.ref.outputs.value }}
           path: .cache/wot-ui
 
-      - name: Extract latest metadata
-        run: pnpm extract:cli --wot-dir .cache/wot-ui --output data/v2.json
+      - name: Extract single-version metadata
+        if: steps.check.outputs.needs_sync == 'true' && steps.ref.outputs.value != ''
+        run: pnpm extract --wot-dir .cache/wot-ui --output data/v2.json
 
       - name: Validate synced data
+        if: steps.check.outputs.needs_sync == 'true'
         run: |
           pnpm test
           pnpm build
 
       - name: Create pull request
+        if: steps.check.outputs.needs_sync == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           branch: chore/sync-wot-ui-data
           commit-message: 'chore: sync wot-ui data'
           title: 'chore: sync wot-ui data'
           body: |
-            Synced wot-ui metadata from `${{ steps.ref.outputs.value }}`.
+            Synced wot-ui metadata.
 
             This PR was generated automatically by `.github/workflows/sync.yml`.
           delete-branch: true

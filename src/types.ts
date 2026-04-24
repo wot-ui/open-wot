@@ -64,10 +64,15 @@ export interface MetadataFile {
   changelog?: ChangelogEntry[]
 }
 
-export interface VersionsFile {
-  latest: string
-  supported: string[]
-  aliases: Record<string, string>
+/**
+ * versions.json nested format:
+ * { "v2": { "2.0": "2.0.4", "2.1": "2.1.0" } }
+ */
+export type VersionsFile = Record<string, Record<string, string>>
+
+export interface VersionInfo {
+  version: string
+  source: 'flag' | 'node_modules' | 'package.json' | 'fallback'
 }
 
 export type OutputFormat = 'json' | 'markdown' | 'text'

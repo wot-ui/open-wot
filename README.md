@@ -66,9 +66,20 @@ wot mcp
 
 多数查询命令支持以下参数：
 
-- `--format text`
-- `--format json`
-- `--version v2`
+- `--format text`（默认）或 `--format json`：输出格式
+- `--version <ver>`：指定 wot-ui 版本，支持以下格式：
+  - `2.0`（minor，自动解析到最新 patch）
+  - `2.0.4`（exact patch）
+  - `latest`（始终使用最新稳定版）
+  - 不传时自动从项目 `node_modules/@wot-ui/ui` 或 `package.json` 依赖声明检测，检测不到则回退到最新版
+
+示例：
+
+```bash
+wot info Button --version 2.0.0
+wot doc Button --version 2.0
+wot list --format json --version latest
+```
 
 ## MCP 集成
 
@@ -103,18 +114,32 @@ wot mcp
 - `docs/guide/changelog.md`
 - `src/uni_modules/wot-ui/components/*/index.scss`
 
-重新生成本地数据有两种方式。
+`data/` 目录保存每个 stable patch 版本的独立快照（`v2.0.0.json`、`v2.0.1.json`、…），以及一个始终指向最新版的 `v2.json`。
 
-使用本地已有的 wot-ui 仓库：
+### 更新数据
+
+**全量同步所有历史 tag（推荐，首次或需要补全历史版本时使用）：**
 
 ```bash
-pnpm extract:cli --wot-dir ../wot-ui --output data/v2.json
+pnpm sync:clone
 ```
 
-直接克隆最新的 wot-ui 仓库并提取：
+克隆 wot-ui 仓库（`--filter=tree:0 --no-checkout`，不下载文件树），按所有 stable tag 逐一 checkout + 提取，已有快照自动跳过。
+
+**仅更新最新版本（快速，CI 单版本触发时使用）：**
 
 ```bash
 pnpm extract:clone
+```
+
+**使用本地已有的 wot-ui 仓库：**
+
+```bash
+# 全量多版本
+pnpm sync --wot-dir ../wot-ui
+
+# 单个版本，手动指定 checkout 后提取
+pnpm extract --wot-dir ../wot-ui --output data/v2.0.4.json
 ```
 
 ## 开发本仓库
@@ -135,13 +160,11 @@ pnpm install
 ### 常用开发命令
 
 ```bash
-pnpm lint
-pnpm test:all
-pnpm build:all
-pnpm typecheck:all
-pnpm build:cli
-pnpm test:cli
-pnpm typecheck:cli
+pnpm lint          # ESLint 检查
+pnpm typecheck     # TypeScript 类型检查
+pnpm test          # 单元测试
+pnpm build         # 构建产物到 dist/
+pnpm compress      # 压缩 data/*.json → data/*.json.gz（发布前自动执行）
 ```
 
 ### 本地调试 CLI
@@ -170,9 +193,10 @@ MCP 走 stdio，终端无交互输出属于正常现象。若要查看 tools 与
 
 ## 自动化流程
 
-- `.github/workflows/ci.yml`：执行主包的 lint、typecheck、build、test
-- `.github/workflows/release.yml`：在 `v*` tag 上通过 reusable workflow 发布 `@wot-ui/cli`
-- `.github/workflows/sync.yml`：拉取上游 `wot-ui/wot-ui`，提取最新元数据，并自动创建同步 PR
+- `.github/workflows/ci.yml`：在 `push`/`PR` 时执行 lint、typecheck、build、test（多 OS × Node 版本矩阵）
+- `.github/workflows/sync.yml`：每日 02:00 UTC 自动检测 `@wot-ui/ui` 最新版本，有更新时拉取全量多版本快照并创建同步 PR；也可手动触发单版本提取
+- `.github/workflows/release.yml`：`v*` tag 触发自动发布 `@wot-ui/cli` 到 npm（发布前自动运行 `pnpm compress && pnpm build`，npm 包只含 `.json.gz`）
+- `.github/workflows/coverage-upload.yml`：`v*` tag 触发，上传测试覆盖率到 Codecov
 
 ## 当前边界
 

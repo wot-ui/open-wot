@@ -1,0 +1,16 @@
+# Exclude raw JSON data files — only .json.gz are published
+data/*.json
+
+# Dev-only files
+scripts/
+test/
+coverage/
+articles/
+.github/
+*.config.ts
+*.config.js
+tsconfig.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+CONTRIBUTING.md
+AGENTS.md

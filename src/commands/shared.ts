@@ -1,5 +1,7 @@
 import type { Command } from 'commander'
 import type { ComponentMeta, CssVarMeta, QueryOptions } from '../types'
+import process from 'node:process'
+import { detectVersion } from '../data/version'
 import { writeJson } from '../utils/output'
 
 export function addQueryOptions(command: Command): Command {
@@ -10,9 +12,14 @@ export function addQueryOptions(command: Command): Command {
 
 export function normalizeQueryOptions(options: Record<string, unknown>): QueryOptions {
   const format = options.format === 'json' || options.format === 'markdown' ? options.format : 'text'
+  const flagVersion = typeof options.version === 'string' ? options.version : undefined
+  const info = detectVersion(flagVersion)
+  if (info.source === 'fallback') {
+    process.stderr.write(`[wot] version not detected in project, falling back to ${info.version}\n`)
+  }
   return {
     format,
-    version: typeof options.version === 'string' ? options.version : undefined,
+    version: info.version,
   }
 }
 
