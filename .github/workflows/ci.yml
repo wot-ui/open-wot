@@ -33,7 +33,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-      - run: pnpm typecheck:all
+      - run: pnpm typecheck
 
   build-and-test:
     runs-on: ${{ matrix.os }}
