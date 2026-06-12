@@ -48,7 +48,7 @@ describe('demo command', () => {
 
     await runCli(program, ['demo', 'Button', 'not-exist'])
 
-    expect(error).toHaveBeenCalledWith('Demo not found: not-exist')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Demo not found: not-exist'))
     expect(process.exitCode).toBe(1)
   })
 })

@@ -61,7 +61,7 @@ describe('changelog command', () => {
 
     await runCli(program, ['changelog'])
 
-    expect(error).toHaveBeenCalledWith('broken')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('broken'))
     expect(process.exitCode).toBe(1)
   })
 })

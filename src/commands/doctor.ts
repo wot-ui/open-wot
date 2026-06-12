@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 import { writeJson, writeLine } from '../utils/output'
 import { diagnoseProject } from '../utils/project'
+import { formatStatusLabel } from '../utils/terminal'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
 export function registerDoctorCommand(program: Command): void {
@@ -18,7 +19,7 @@ export function registerDoctorCommand(program: Command): void {
 
         const lines = [
           `Directory: ${report.dir}`,
-          ...report.checks.map(check => `${check.status.toUpperCase()} ${check.name}: ${check.message}${check.suggestion ? ` | ${check.suggestion}` : ''}`),
+          ...report.checks.map(check => `${formatStatusLabel(check.status)} ${check.name}: ${check.message}${check.suggestion ? ` | ${check.suggestion}` : ''}`),
         ]
         writeLine(lines.join('\n'))
       }

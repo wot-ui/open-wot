@@ -47,7 +47,7 @@ describe('doc command', () => {
 
     await runCli(program, ['doc', 'Button'])
 
-    expect(error).toHaveBeenCalledWith('Documentation not found: Button')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Documentation not found: Button'))
     expect(process.exitCode).toBe(1)
   })
 

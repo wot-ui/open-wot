@@ -1,8 +1,8 @@
 import type { Command } from 'commander'
 import type { ComponentMeta, CssVarMeta, QueryOptions } from '../types'
-import process from 'node:process'
 import { detectVersion } from '../data/version'
 import { writeJson } from '../utils/output'
+import { formatLogMessage, writeStderrLine } from '../utils/terminal'
 
 export function addQueryOptions(command: Command): Command {
   return command
@@ -15,7 +15,7 @@ export function normalizeQueryOptions(options: Record<string, unknown>): QueryOp
   const flagVersion = typeof options.version === 'string' ? options.version : undefined
   const info = detectVersion(flagVersion)
   if (info.source === 'fallback') {
-    process.stderr.write(`[wot] version not detected in project, falling back to ${info.version}\n`)
+    writeStderrLine(formatLogMessage('warn', `Version not detected in project, falling back to ${info.version}`))
   }
   return {
     format,
@@ -27,7 +27,7 @@ export function printError(message: string, format: QueryOptions['format']): voi
   if (format === 'json')
     writeJson({ error: true, message })
   else
-    console.error(message)
+    console.error(formatLogMessage('error', message))
 }
 
 export function getComponentLabel(component: ComponentMeta): string {

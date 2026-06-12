@@ -51,7 +51,7 @@ describe('list command', () => {
 
     await runCli(program, ['list'])
 
-    expect(error).toHaveBeenCalledWith('boom')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('boom'))
     expect(process.exitCode).toBe(1)
   })
 })

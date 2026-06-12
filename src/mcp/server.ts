@@ -2,6 +2,7 @@ import process from 'node:process'
 import { McpServer, StdioServerTransport } from '@modelcontextprotocol/server'
 import * as z from 'zod/v4'
 import packageJson from '../../package.json'
+import { getCliUpdateStatus } from '../utils/update-check'
 import { WOT_EXPERT_PROMPT, WOT_PAGE_GENERATOR_PROMPT } from './prompts'
 import { registerMcpTools } from './tools'
 
@@ -18,6 +19,11 @@ export async function startMcpServer(): Promise<void> {
   )
 
   registerMcpTools(server)
+
+  void getCliUpdateStatus({
+    currentVersion: packageJson.version,
+    packageName: packageJson.name,
+  }).catch(() => {})
 
   server.registerPrompt('wot-expert', {
     description: 'General wot-ui expert workflow.',

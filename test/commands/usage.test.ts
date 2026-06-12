@@ -53,7 +53,7 @@ describe('usage command', () => {
 
     await runCli(program, ['usage'])
 
-    expect(error).toHaveBeenCalledWith('usage-fail')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('usage-fail'))
     expect(process.exitCode).toBe(1)
   })
 })

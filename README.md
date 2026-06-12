@@ -24,6 +24,8 @@ npm install -g @wot-ui/cli
 
 安装完成后可直接使用 `wot` 命令。
 
+`wot` 在交互式终端启动时会自动检查 `@wot-ui/cli` 是否有新版本。检查结果最多缓存 24 小时，提示只写入 stderr，不会污染 `--format json` 的 stdout；CI 和非交互式环境会自动跳过。`wot mcp` 不会在启动时输出更新提示，MCP 客户端可通过 `wot_status` tool 查询 CLI 更新状态。若需要关闭检查，可设置 `WOT_DISABLE_UPDATE_CHECK=1` 或 `NO_UPDATE_NOTIFIER=1`。
+
 如果你在仓库内本地调试，推荐直接运行源码入口，而不是依赖全局命令：
 
 ```bash
@@ -98,13 +100,18 @@ wot list --format json --version latest
 
 当前 MCP Server 提供以下 tools：
 
-- `wot_list`
-- `wot_info`
-- `wot_doc`
-- `wot_demo`
-- `wot_token`
-- `wot_changelog`
-- `wot_lint`
+| Tool | 功能 | 主要参数 |
+| --- | --- | --- |
+| `wot_status` | 查看 MCP Server 与 `@wot-ui/cli` 状态，包括当前版本、是否有 CLI 更新及更新命令。 | 无 |
+| `wot_list` | 列出当前离线知识库中的 wot-ui 组件元数据，适合在生成页面前发现可用组件。 | `version` |
+| `wot_info` | 查询单个组件的 props、events、slots、CSS 变量等结构化信息。 | `component`, `version` |
+| `wot_doc` | 获取单个组件的完整 markdown 文档，适合需要阅读用法细节或限制说明时调用。 | `component`, `version` |
+| `wot_demo` | 获取组件 demo 列表，或按 demo 名称获取指定示例源码。 | `component`, `demo`, `version` |
+| `wot_token` | 查询组件 CSS 变量；不传组件名时返回所有组件的 CSS 变量摘要。 | `component`, `version` |
+| `wot_changelog` | 查询 wot-ui v2 离线数据中的更新记录，可按版本或组件过滤。 | `version`, `component` |
+| `wot_lint` | 扫描本地项目中的 wot-ui 使用问题，例如未知组件、空按钮等规则。 | `dir`, `version` |
+
+其中 `version` 支持与 CLI 一致的写法，例如 `2.0`、`2.0.4`、`latest`；不传时会按项目依赖或离线数据自动解析。
 
 ## 数据来源
 

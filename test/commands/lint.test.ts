@@ -54,7 +54,7 @@ describe('lint command', () => {
 
     await runCli(program, ['lint'])
 
-    expect(error).toHaveBeenCalledWith('lint-fail')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('lint-fail'))
     expect(process.exitCode).toBe(1)
   })
 })

@@ -54,7 +54,7 @@ describe('token command', () => {
 
     await runCli(program, ['token', 'Unknown'])
 
-    expect(error).toHaveBeenCalledWith('Component not found: Unknown')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Component not found: Unknown'))
     expect(process.exitCode).toBe(1)
   })
 
