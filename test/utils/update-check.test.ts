@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { checkForCliUpdate, compareSemver, getCliUpdateStatus, shouldCheckForCliUpdate } from '../../src/utils/update-check'
+import { checkForCliUpdate, compareSemver, getCachedCliUpdateStatus, getCliUpdateStatus, shouldCheckForCliUpdate } from '../../src/utils/update-check'
 
 function stripAnsi(value: string): string {
   return value.replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g'), '')
@@ -34,11 +34,17 @@ describe('update check', () => {
     expect(compareSemver('v1.0.2', '1.0.2')).toBe(0)
     expect(compareSemver('1.0.1', '1.0.2')).toBe(-1)
     expect(compareSemver('latest', '1.0.2')).toBe(0)
+    expect(compareSemver('1.0.0', '1.0.0-alpha')).toBe(1)
+    expect(compareSemver('1.0.0-alpha', '1.0.0')).toBe(-1)
+    expect(compareSemver('1.0.0-alpha.2', '1.0.0-alpha.10')).toBe(-1)
+    expect(compareSemver('1.0.0-alpha.beta', '1.0.0-alpha.1')).toBe(1)
+    expect(compareSemver('1.0.0+build.2', '1.0.0+build.1')).toBe(0)
   })
 
   it('skips non-interactive and mcp startup checks', () => {
     expect(shouldCheckForCliUpdate(['node', 'wot', 'list'], {}, false)).toBe(false)
     expect(shouldCheckForCliUpdate(['node', 'wot', 'mcp'], {}, true)).toBe(false)
+    expect(shouldCheckForCliUpdate(['node', 'wot', 'lint', 'mcp'], {}, true)).toBe(true)
     expect(shouldCheckForCliUpdate(['node', 'wot', 'list'], { WOT_DISABLE_UPDATE_CHECK: '1' }, true)).toBe(false)
     expect(shouldCheckForCliUpdate(['node', 'wot', 'list'], {}, true)).toBe(true)
   })
@@ -68,7 +74,7 @@ describe('update check', () => {
     expect(stderr.write).not.toHaveBeenCalled()
   })
 
-  it('prints an update notice when the registry has a newer version', async () => {
+  it('does not fetch during cli startup when cache is missing', () => {
     const dir = mkdtempSync(join(tmpdir(), 'open-wot-update-check-'))
     const stderr = { write: vi.fn() }
     const fetchFn = vi.fn(async () => ({
@@ -76,7 +82,7 @@ describe('update check', () => {
       json: async () => ({ version: '1.0.3' }),
     }))
 
-    await checkForCliUpdate({
+    checkForCliUpdate({
       args: ['node', 'wot', 'list'],
       cacheFile: join(dir, 'cache.json'),
       currentVersion: '1.0.2',
@@ -88,7 +94,25 @@ describe('update check', () => {
       stderr,
     })
 
-    expect(fetchFn).toHaveBeenCalledWith('https://registry.npmjs.org/@wot-ui%2fcli/latest', expect.any(Object))
+    expect(fetchFn).not.toHaveBeenCalled()
+    expect(stderr.write).not.toHaveBeenCalled()
+  })
+
+  it('prints an update notice from fresh cache without fetching', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'open-wot-update-check-'))
+    const cacheFile = join(dir, 'cache.json')
+    const stderr = { write: vi.fn() }
+    const fetchFn = vi.fn()
+    writeFileSync(cacheFile, `${JSON.stringify({ checkedAt: 900, latestVersion: '1.0.3' })}\n`)
+
+    checkForCliUpdate(createUpdateCheckOptions({
+      cacheFile,
+      fetchFn,
+      now: 1000,
+      stderr,
+    }))
+
+    expect(fetchFn).not.toHaveBeenCalled()
     expect(stripAnsi(String(stderr.write.mock.calls[0]?.[0]))).toContain('1.0.2 -> 1.0.3')
   })
 
@@ -142,39 +166,38 @@ describe('update check', () => {
 
   it.each(['1.0.2', '1.0.1'])('does not print a notice for latest version %s', async (latestVersion) => {
     const stderr = { write: vi.fn() }
+    const dir = mkdtempSync(join(tmpdir(), 'open-wot-update-check-'))
+    const cacheFile = join(dir, 'cache.json')
+    writeFileSync(cacheFile, `${JSON.stringify({ checkedAt: 900, latestVersion })}\n`)
 
-    await checkForCliUpdate(createUpdateCheckOptions({
-      fetchFn: vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ version: latestVersion }),
-      })),
+    checkForCliUpdate(createUpdateCheckOptions({
+      cacheFile,
+      fetchFn: vi.fn(),
       stderr,
     }))
 
     expect(stderr.write).not.toHaveBeenCalled()
   })
 
-  it('uses fresh cache instead of fetching every time', async () => {
+  it('returns fresh cached cli startup status without fetching', () => {
     const dir = mkdtempSync(join(tmpdir(), 'open-wot-update-check-'))
     const cacheFile = join(dir, 'cache.json')
-    const stderr = { write: vi.fn() }
     const fetchFn = vi.fn()
     writeFileSync(cacheFile, `${JSON.stringify({ checkedAt: 900, latestVersion: '1.0.3' })}\n`)
 
-    await checkForCliUpdate({
-      args: ['node', 'wot', 'list'],
+    const status = getCachedCliUpdateStatus(createUpdateCheckOptions({
       cacheFile,
-      currentVersion: '1.0.2',
-      env: {},
       fetchFn,
-      isTty: true,
       now: 1000,
-      packageName: '@wot-ui/cli',
-      stderr,
-    })
+    }))
 
     expect(fetchFn).not.toHaveBeenCalled()
-    expect(stripAnsi(String(stderr.write.mock.calls[0]?.[0]))).toContain('1.0.2 -> 1.0.3')
+    expect(status).toMatchObject({
+      cached: true,
+      checkedAt: 900,
+      latestVersion: '1.0.3',
+      updateAvailable: true,
+    })
   })
 
   it('returns cached status without fetching when cache is fresh', async () => {
@@ -233,7 +256,7 @@ describe('update check', () => {
     }))
     writeFileSync(cacheFile, `${JSON.stringify({ checkedAt: 1000, latestVersion: '1.0.3' })}\n`)
 
-    await checkForCliUpdate(createUpdateCheckOptions({
+    const status = await getCliUpdateStatus(createUpdateCheckOptions({
       cacheFile,
       checkIntervalMs: 100,
       fetchFn,
@@ -243,7 +266,10 @@ describe('update check', () => {
 
     expect(fetchFn).toHaveBeenCalledOnce()
     expect(readFileSync(cacheFile, 'utf8')).toContain('"latestVersion": "1.0.4"')
-    expect(stripAnsi(String(stderr.write.mock.calls[0]?.[0]))).toContain('1.0.2 -> 1.0.4')
+    expect(status).toMatchObject({
+      latestVersion: '1.0.4',
+      updateAvailable: true,
+    })
   })
 
   it('uses npm_config_registry when no registry option is passed', async () => {
@@ -252,7 +278,7 @@ describe('update check', () => {
       json: async () => ({ version: '1.0.3' }),
     }))
 
-    await checkForCliUpdate(createUpdateCheckOptions({
+    await getCliUpdateStatus(createUpdateCheckOptions({
       env: { npm_config_registry: 'https://registry.example.test/' },
       fetchFn,
     }))
@@ -294,7 +320,7 @@ describe('update check', () => {
     const cacheFile = join(dir, 'cache.json')
     const stderr = { write: vi.fn() }
 
-    await checkForCliUpdate({
+    await getCliUpdateStatus({
       args: ['node', 'wot', 'list'],
       cacheFile,
       currentVersion: '1.0.2',
@@ -369,7 +395,7 @@ describe('update check', () => {
     const cacheFile = createUpdateCheckOptions().cacheFile!
     const stderr = { write: vi.fn() }
 
-    await checkForCliUpdate(createUpdateCheckOptions({
+    await getCliUpdateStatus(createUpdateCheckOptions({
       cacheFile,
       fetchFn: vi.fn(async () => {
         throw new Error('network unavailable')
@@ -391,13 +417,13 @@ describe('update check', () => {
     const stderr = { write: vi.fn() }
     writeFileSync(cacheFile, 'not json')
 
-    await checkForCliUpdate(createUpdateCheckOptions({
+    const status = await getCliUpdateStatus(createUpdateCheckOptions({
       cacheFile,
       fetchFn,
       stderr,
     }))
 
     expect(fetchFn).toHaveBeenCalledOnce()
-    expect(stripAnsi(String(stderr.write.mock.calls[0]?.[0]))).toContain('1.0.2 -> 1.0.3')
+    expect(status.updateAvailable).toBe(true)
   })
 })

@@ -22,7 +22,7 @@ export function supportsColor(options: TerminalFormatOptions = {}): boolean {
   const isTty = options.isTty ?? process.stderr.isTTY
   if (!isTty)
     return false
-  if (env.NO_COLOR || env.FORCE_COLOR === '0' || env.TERM === 'dumb')
+  if ('NO_COLOR' in env || env.FORCE_COLOR === '0' || env.TERM === 'dumb')
     return false
   return true
 }

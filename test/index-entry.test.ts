@@ -14,7 +14,7 @@ vi.mock('../src/app', () => ({
 }))
 
 vi.mock('../src/utils/update-check', () => ({
-  checkForCliUpdate: vi.fn(async () => {}),
+  checkForCliUpdate: vi.fn(() => {}),
 }))
 
 describe('cli entry', () => {

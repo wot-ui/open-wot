@@ -19,6 +19,7 @@ describe('terminal formatting', () => {
   it('uses ansi colors only for color-capable terminals', () => {
     expect(supportsColor({ env: {}, isTty: true })).toBe(true)
     expect(supportsColor({ env: { NO_COLOR: '1' }, isTty: true })).toBe(false)
+    expect(supportsColor({ env: { NO_COLOR: '' }, isTty: true })).toBe(false)
     expect(supportsColor({ env: { TERM: 'dumb' }, isTty: true })).toBe(false)
     expect(formatStatusLabel('pass', { env: {}, isTty: true })).toContain('\x1B[32m')
   })
