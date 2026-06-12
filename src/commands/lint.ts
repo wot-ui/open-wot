@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 import { writeJson, writeLine } from '../utils/output'
 import { lintProject } from '../utils/scanner'
+import { formatStatusLabel } from '../utils/terminal'
 import { addQueryOptions, normalizeQueryOptions, printError } from './shared'
 
 export function registerLintCommand(program: Command): void {
@@ -23,7 +24,7 @@ export function registerLintCommand(program: Command): void {
 
         const lines = [
           `Scanned files: ${report.scannedFiles}`,
-          ...report.issues.map(issue => `${issue.severity.toUpperCase()} ${issue.file}:${issue.line} [${issue.rule}] ${issue.message}`),
+          ...report.issues.map(issue => `${formatStatusLabel(issue.severity)} ${issue.file}:${issue.line} [${issue.rule}] ${issue.message}`),
         ]
         writeLine(lines.join('\n'))
       }

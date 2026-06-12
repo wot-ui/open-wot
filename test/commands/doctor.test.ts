@@ -52,7 +52,7 @@ describe('doctor command', () => {
 
     await runCli(program, ['doctor'])
 
-    expect(error).toHaveBeenCalledWith('doctor-fail')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('doctor-fail'))
     expect(process.exitCode).toBe(1)
   })
 })

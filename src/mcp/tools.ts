@@ -1,16 +1,53 @@
 import type { McpServer } from '@modelcontextprotocol/server'
+import type { UpdateCheckOptions } from '../utils/update-check'
 import process from 'node:process'
 import * as z from 'zod/v4'
+import packageJson from '../../package.json'
 import { loadMetadataFile } from '../data/loader'
 import { findComponent, listComponents } from '../data/metadata'
 import { resolveVersion } from '../data/version'
 import { lintProject } from '../utils/scanner'
+import { getCliUpdateStatus } from '../utils/update-check'
 
 function jsonText(value: unknown): string {
   return JSON.stringify(value, null, 2)
 }
 
-export function registerMcpTools(server: McpServer): void {
+export interface RegisterMcpToolsOptions {
+  updateCheckOptions?: Partial<UpdateCheckOptions>
+}
+
+export function registerMcpTools(server: McpServer, options: RegisterMcpToolsOptions = {}): void {
+  server.registerTool('wot_status', {
+    description: 'Get wot-ui MCP server and CLI update status.',
+    inputSchema: z.object({}),
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+  }, async () => {
+    const update = await getCliUpdateStatus({
+      currentVersion: packageJson.version,
+      packageName: packageJson.name,
+      ...options.updateCheckOptions,
+    })
+
+    return {
+      content: [{
+        type: 'text',
+        text: jsonText({
+          server: {
+            name: 'wot-ui',
+            version: packageJson.version,
+          },
+          cli: update,
+        }),
+      }],
+    }
+  })
+
   server.registerTool('wot_list', {
     description: 'List available wot-ui components.',
     inputSchema: z.object({ version: z.string().optional() }),
