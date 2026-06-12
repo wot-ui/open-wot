@@ -2,7 +2,7 @@ import type { CliUpdateStatus } from './update-check'
 import process from 'node:process'
 
 type TerminalLevel = 'error' | 'hint' | 'info' | 'success' | 'update' | 'warn'
-type StatusLevel = 'error' | 'fail' | 'pass' | 'warn' | 'warning'
+type StatusLevel = 'error' | 'fail' | 'ok' | 'pass' | 'warn' | 'warning'
 
 interface TerminalFormatOptions {
   env?: NodeJS.ProcessEnv
@@ -41,7 +41,7 @@ export function formatLogMessage(level: TerminalLevel, message: string, options:
 export function formatStatusLabel(status: StatusLevel, options: TerminalFormatOptions = {}): string {
   const normalized = status.toUpperCase()
   const color = createColorizer(options)
-  if (status === 'pass')
+  if (status === 'ok' || status === 'pass')
     return color.green(normalized)
   if (status === 'warn' || status === 'warning')
     return color.yellow(normalized)

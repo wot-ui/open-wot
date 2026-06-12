@@ -11,6 +11,7 @@ describe('terminal formatting', () => {
   it('keeps output plain when color is not supported', () => {
     expect(supportsColor({ env: {}, isTty: false })).toBe(false)
     expect(formatLogMessage('warn', 'Check failed', { env: {}, isTty: false })).toBe('[wot] Check failed')
+    expect(formatStatusLabel('ok', { env: {}, isTty: false })).toBe('OK')
     expect(formatStatusLabel('warning', { env: {}, isTty: false })).toBe('WARNING')
     expect(formatCommand('npm install -g @wot-ui/cli', { env: {}, isTty: false })).toBe('npm install -g @wot-ui/cli')
   })

@@ -152,14 +152,14 @@ function readCache(cacheFile: string): UpdateCheckCache | undefined {
   if (!existsSync(cacheFile))
     return undefined
 
-  let cache: Partial<UpdateCheckCache>
+  let cache: Partial<UpdateCheckCache> | null
   try {
-    cache = JSON.parse(readFileSync(cacheFile, 'utf8')) as Partial<UpdateCheckCache>
+    cache = JSON.parse(readFileSync(cacheFile, 'utf8')) as Partial<UpdateCheckCache> | null
   }
   catch {
     return undefined
   }
-  if (typeof cache.checkedAt !== 'number')
+  if (!cache || typeof cache !== 'object' || typeof cache.checkedAt !== 'number')
     return undefined
 
   return {
@@ -234,6 +234,11 @@ function isRegistryLatestResponse(value: unknown): value is { version: string } 
 }
 
 function writeCache(cacheFile: string, cache: UpdateCheckCache): void {
-  mkdirSync(dirname(cacheFile), { recursive: true })
-  writeFileSync(cacheFile, `${JSON.stringify(cache, null, 2)}\n`)
+  try {
+    mkdirSync(dirname(cacheFile), { recursive: true })
+    writeFileSync(cacheFile, `${JSON.stringify(cache, null, 2)}\n`)
+  }
+  catch {
+    // Cache writes are best-effort and must not break CLI or MCP calls.
+  }
 }

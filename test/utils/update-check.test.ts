@@ -329,6 +329,42 @@ describe('update check', () => {
     expect(status.latestVersion).toBeUndefined()
   })
 
+  it('ignores null cache and fetches a fresh version', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'open-wot-update-check-'))
+    const cacheFile = join(dir, 'cache.json')
+    const fetchFn = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ version: '1.0.3' }),
+    }))
+    writeFileSync(cacheFile, 'null')
+
+    const status = await getCliUpdateStatus(createUpdateCheckOptions({
+      cacheFile,
+      fetchFn,
+    }))
+
+    expect(fetchFn).toHaveBeenCalledOnce()
+    expect(status.updateAvailable).toBe(true)
+  })
+
+  it('continues when cache cannot be written', async () => {
+    const cacheFile = mkdtempSync(join(tmpdir(), 'open-wot-update-check-directory-'))
+
+    const status = await getCliUpdateStatus(createUpdateCheckOptions({
+      cacheFile,
+      fetchFn: vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ version: '1.0.3' }),
+      })),
+    }))
+
+    expect(status).toMatchObject({
+      cached: false,
+      latestVersion: '1.0.3',
+      updateAvailable: true,
+    })
+  })
+
   it('caches thrown network errors without printing a notice', async () => {
     const cacheFile = createUpdateCheckOptions().cacheFile!
     const stderr = { write: vi.fn() }
