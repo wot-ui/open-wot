@@ -41,6 +41,25 @@ describe('update check', () => {
     expect(compareSemver('1.0.0+build.2', '1.0.0+build.1')).toBe(0)
   })
 
+  it('orders prerelease identifiers according to semver precedence', () => {
+    const versions = [
+      '1.0.0-alpha',
+      '1.0.0-alpha.1',
+      '1.0.0-alpha.beta',
+      '1.0.0-beta',
+      '1.0.0-beta.2',
+      '1.0.0-beta.11',
+      '1.0.0-rc.1',
+      '1.0.0',
+    ]
+
+    for (let index = 0; index < versions.length - 1; index++) {
+      expect(compareSemver(versions[index]!, versions[index + 1]!)).toBe(-1)
+      expect(compareSemver(versions[index + 1]!, versions[index]!)).toBe(1)
+    }
+    expect(compareSemver('1.0.0-1', '1.0.0-alpha')).toBe(-1)
+  })
+
   it('skips non-interactive and mcp startup checks', () => {
     expect(shouldCheckForCliUpdate(['node', 'wot', 'list'], {}, false)).toBe(false)
     expect(shouldCheckForCliUpdate(['node', 'wot', 'mcp'], {}, true)).toBe(false)
