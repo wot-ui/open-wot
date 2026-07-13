@@ -20,7 +20,7 @@ catalogs:
     '@antfu/eslint-config': ^6.6.1
     '@antfu/ni': ^28.0.0
     '@cfworker/json-schema': ^4.1.1
-    '@modelcontextprotocol/server': ^2.0.0-alpha.2
+    '@modelcontextprotocol/server': 2.0.0-alpha.2
     '@vue/compiler-sfc': ^3.5.13
     bumpp: ^10.3.2
     commander: ^14.0.0

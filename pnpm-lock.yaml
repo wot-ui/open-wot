@@ -16,7 +16,7 @@ catalogs:
       specifier: ^4.1.1
       version: 4.1.1
     '@modelcontextprotocol/server':
-      specifier: ^2.0.0-alpha.2
+      specifier: 2.0.0-alpha.2
       version: 2.0.0-alpha.2
     '@vue/compiler-sfc':
       specifier: ^3.5.13
