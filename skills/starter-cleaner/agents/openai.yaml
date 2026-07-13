@@ -1,0 +1,5 @@
+# eslint-disable yaml/plain-scalar
+interface:
+  display_name: 'Wot Starter Cleaner'
+  short_description: '将 wot-starter v2 清理为最小可开发模板'
+  default_prompt: '使用 $starter-cleaner 将当前 wot-starter v2 模板精简至最小状态。'

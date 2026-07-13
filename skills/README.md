@@ -13,6 +13,7 @@ Skills 是 AI 的“超能力模板”，是一套完整的、可复用的、能
 | `wot-ui-unocss-preset-guide` | 指导安装、配置并使用 `@wot-ui/unocss-preset`。 | 预设接入、`unocss.config.ts` 配置（如 `presetWot`）、`prefix/preflight/baseTokens` 使用示例、类名不生效/自动补全不出现等问题排查。 | [SKILL.md](./wot-ui-unocss-preset-guide/SKILL.md) |
 | `create-wot-ui-theme` | 生成 wot-ui 单文件主题 SCSS 的专项技能。 | 需要为 wot-ui 定制品牌主题，且要求遵循"单文件包含 mixin 和挂载选择器、App.vue 仅作 `@use` 引入"的约束时使用。 | [SKILL.md](./create-wot-ui-theme/SKILL.md) |
 | `migrate-v1-to-v2` | 将项目从 `wot-design-uni`（v1）迁移到 `@wot-ui/ui`（v2）的专项技能。 | 替换包名/路径、迁移组件 API、迁移表单校验体系（zodAdapter / FormRules）、修复 v2 不兼容变更导致的编译或运行时报错。 | [SKILL.md](./migrate-v1-to-v2/SKILL.md) |
+| `starter-cleaner` | 将 wot-starter v2 模板精简为最小可开发状态。 | 清理模板文档、示例分包、生成文件和 monorepo 配置，并同步整理 Vite 与 `package.json` 配置。 | [SKILL.md](./starter-cleaner/SKILL.md) |
 
 ## 安装
 
