@@ -133,6 +133,35 @@ describe('mcp client adapters', () => {
     expect(await readFile(path, 'utf8')).toBe('model = "gpt-test"\n')
   })
 
+  it('updates the managed Codex TOML section with replacement tokens as literal text', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const path = join(cwd, '.codex', 'config.toml')
+    await mkdir(join(cwd, '.codex'), { recursive: true })
+    await writeFile(path, `model = "gpt-test"
+# open-wot managed mcp server start
+[mcp_servers.wot-ui]
+command = "npx"
+args = ["-y", "@wot-ui/cli@1.0.3", "mcp"]
+# open-wot managed mcp server end
+`)
+
+    const updatedContext = {
+      ...context(cwd, homeDir),
+      server: {
+        command: 'npx',
+        args: ['-y', '@wot-ui/cli@$&', 'mcp'],
+      },
+    }
+    await applyChangePlan(await codexAdapter.planInstall(updatedContext))
+
+    const content = await readFile(path, 'utf8')
+    expect(content).toContain('model = "gpt-test"')
+    expect(content).toContain('"@wot-ui/cli@$&"')
+    expect(content).not.toContain('@wot-ui/cli@1.0.3')
+    expect((await codexAdapter.inspect(updatedContext)).matches).toBe(true)
+  })
+
   it('does not read another Codex MCP server as the wot-ui section', async () => {
     const cwd = await temporaryDirectory()
     const homeDir = await temporaryDirectory()

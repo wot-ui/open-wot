@@ -1,6 +1,33 @@
+import type { ComponentMeta } from '../src/types'
 import { describe, expect, it } from 'vitest'
 import { filterComponents, findComponent, listComponents, toComponentSummary, toDemoSummary } from '../src/data/metadata'
 import { getLatestVersion } from '../src/data/version'
+
+const searchableComponent: ComponentMeta = {
+  name: 'AlphaWidget',
+  nameZh: '甲组件',
+  tag: 'wd-alpha-widget',
+  category: 'form-controls',
+  description: 'accepts user input',
+  descriptionZh: '接收用户输入',
+  since: '2.0.0',
+  props: [],
+  events: [],
+  slots: [],
+  cssVars: [],
+}
+
+const unrelatedComponent: ComponentMeta = {
+  ...searchableComponent,
+  name: 'BetaWidget',
+  nameZh: '乙组件',
+  tag: 'wd-beta-widget',
+  category: 'navigation',
+  description: 'opens another page',
+  descriptionZh: '打开其他页面',
+}
+
+const filterCandidates = [searchableComponent, unrelatedComponent]
 
 describe('metadata', () => {
   it('lists extracted v2 components', () => {
@@ -20,13 +47,19 @@ describe('metadata', () => {
     expect(components.length).toBeGreaterThan(50)
   })
 
-  it('filters components by names, tags, categories, and descriptions', () => {
-    const components = listComponents('2.2.0')
+  it.each([
+    ['name', 'alphawidget'],
+    ['Chinese name', '甲组件'],
+    ['tag', 'wd-alpha-widget'],
+    ['category', 'form-'],
+    ['description', 'user input'],
+    ['Chinese description', '用户输入'],
+  ])('filters components by %s', (_field, keyword) => {
+    expect(filterComponents(filterCandidates, keyword)).toEqual([searchableComponent])
+  })
 
-    expect(filterComponents(components, 'button').some(component => component.name === 'Button')).toBe(true)
-    expect(filterComponents(components, '按钮').some(component => component.name === 'Button')).toBe(true)
-    expect(filterComponents(components, 'wd-button').map(component => component.name)).toContain('Button')
-    expect(filterComponents(components, '  ')).toBe(components)
+  it('returns the original component list for a blank keyword', () => {
+    expect(filterComponents(filterCandidates, '  ')).toBe(filterCandidates)
   })
 
   it('creates component and demo summaries without large content fields', () => {

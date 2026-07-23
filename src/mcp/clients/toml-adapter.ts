@@ -166,7 +166,7 @@ function assertInstalledEntry(content: string, block: string, path: string): voi
 function replaceServerSection(content: string, block: string): string {
   const pattern = managedPattern()
   if (pattern.test(content))
-    return content.replace(pattern, block)
+    return content.replace(pattern, () => block)
 
   const tableMatch = TABLE_PATTERN.exec(content)
   if (tableMatch) {

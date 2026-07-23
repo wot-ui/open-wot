@@ -85,8 +85,8 @@ wot mcp remove --client cursor
 {
   "mcpServers": {
     "wot-ui": {
-      "command": "wot",
-      "args": ["mcp"]
+      "command": "npx",
+      "args": ["-y", "@wot-ui/cli", "mcp"]
     }
   }
 }
