@@ -6,6 +6,7 @@ import {
   getComponentDescription,
   getComponentLabel,
   normalizeQueryOptions,
+  parsePositiveIntegerOption,
   printError,
 } from '../../src/commands/shared'
 import { writeJson } from '../../src/utils/output'
@@ -33,6 +34,13 @@ describe('shared command utilities', () => {
   it('prints error in json mode', () => {
     printError('oops', 'json')
     expect(writeJson).toHaveBeenCalledWith({ error: true, message: 'oops' })
+  })
+
+  it('accepts only positive finite integer options', () => {
+    expect(parsePositiveIntegerOption(undefined, 10_000, '--timeout')).toBe(10_000)
+    expect(parsePositiveIntegerOption('250', 10_000, '--timeout')).toBe(250)
+    for (const value of ['0', '-1', '1.5', 'Infinity', 'not-a-number'])
+      expect(() => parsePositiveIntegerOption(value, 10_000, '--timeout')).toThrow('Invalid --timeout')
   })
 
   it('formats component labels and descriptions', () => {

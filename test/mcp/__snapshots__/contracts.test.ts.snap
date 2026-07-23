@@ -1,0 +1,136 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`mcp tool contracts > snapshots tool names and input schemas 1`] = `
+{
+  "wot_changelog": {
+    "description": "Get changelog entries for the supported v2 dataset.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+        },
+        "version": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+  },
+  "wot_demo": {
+    "description": "Get component demo code or list demos.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+        },
+        "demo": {
+          "type": "string",
+        },
+        "version": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "component",
+      ],
+      "type": "object",
+    },
+  },
+  "wot_doc": {
+    "description": "Get component markdown documentation.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+        },
+        "version": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "component",
+      ],
+      "type": "object",
+    },
+  },
+  "wot_info": {
+    "description": "Get props, events, slots, and CSS variables for a component.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+        },
+        "version": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "component",
+      ],
+      "type": "object",
+    },
+  },
+  "wot_lint": {
+    "description": "Lint a local project for wot-ui related issues.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "dir": {
+          "type": "string",
+        },
+        "version": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+  },
+  "wot_list": {
+    "description": "List available wot-ui components.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+  },
+  "wot_status": {
+    "description": "Get wot-ui MCP server and CLI update status.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object",
+    },
+  },
+  "wot_token": {
+    "description": "Get component CSS variables.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+        },
+        "version": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+  },
+}
+`;

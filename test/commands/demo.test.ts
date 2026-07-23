@@ -30,7 +30,10 @@ describe('demo command', () => {
 
     await runCli(program, ['demo', 'Button', '--format', 'json'])
 
-    expect(writeJson).toHaveBeenCalledWith(expect.objectContaining({ component: 'Button' }))
+    expect(writeJson).toHaveBeenCalledWith({
+      component: 'Button',
+      demos: [expect.objectContaining({ code: '<wd-button />', name: 'basic' })],
+    })
   })
 
   it('prints selected demo code', async () => {

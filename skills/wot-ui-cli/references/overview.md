@@ -59,14 +59,34 @@
 
 ### Run MCP In A Client
 
+推荐自动接入：
+
+```bash
+wot agent init --client cursor
+wot agent status --client cursor
+wot agent doctor --client cursor
+```
+
+只管理 MCP 时使用：
+
+```bash
+wot mcp init --client cursor
+wot mcp print --client cursor
+wot mcp status --client cursor
+wot mcp doctor --client cursor
+wot mcp remove --client cursor
+```
+
+所有写操作支持 `--dry-run`；Agent 或 CI 非交互执行时显式传入 `--yes`。
+
 典型配置：
 
 ```json
 {
   "mcpServers": {
     "wot-ui": {
-      "command": "wot",
-      "args": ["mcp"]
+      "command": "npx",
+      "args": ["-y", "@wot-ui/cli", "mcp"]
     }
   }
 }

@@ -13,16 +13,39 @@ open-wot 是 wot-ui 的 AI 工具链仓库，当前对外发布的核心包为 `
 
 - 组件知识查询：`list`、`info`、`doc`、`demo`、`token`、`changelog`
 - 项目分析：`doctor`、`usage`、`lint`
-- MCP Server：`wot mcp`
+- Agent 接入：`wot agent init` 自动配置 MCP、内置 Skill 与 Agent Instructions
+- MCP 生命周期：`wot mcp`（默认启动 Server）、`wot mcp serve/list/init/status/doctor/remove/print`
 - 元数据提取：从 `wot-ui/wot-ui` 源码生成本地 `v2.json`
 
 ## 安装
 
+推荐全局安装 CLI：
+
 ```bash
-npm install -g @wot-ui/cli
+npm install -g @wot-ui/cli@latest
 ```
 
-安装完成后可直接使用 `wot` 命令。
+也可以使用其他包管理器：
+
+```bash
+pnpm add -g @wot-ui/cli@latest
+bun add -g @wot-ui/cli@latest
+```
+
+安装完成后可直接使用 `wot`：
+
+```bash
+wot list
+```
+
+如果只想临时运行，也可以使用包执行器，不会修改项目依赖：
+
+```bash
+pnpm dlx @wot-ui/cli@latest list
+npx -y @wot-ui/cli@latest list
+yarn dlx @wot-ui/cli@latest list
+bunx @wot-ui/cli@latest list
+```
 
 `wot` 在交互式终端启动时会自动检查 `@wot-ui/cli` 是否有新版本。检查结果最多缓存 24 小时，提示只写入 stderr，不会污染 `--format json` 的 stdout；CI 和非交互式环境会自动跳过。`wot mcp` 不会在启动时输出更新提示，MCP 客户端可通过 `wot_status` tool 查询 CLI 更新状态。若需要关闭检查，可设置 `WOT_DISABLE_UPDATE_CHECK=1` 或 `NO_UPDATE_NOTIFIER=1`。
 
@@ -36,6 +59,7 @@ pnpm exec tsx src/index.ts list
 
 ```bash
 wot list
+wot list button
 wot info Button
 wot demo Button basic
 wot doc Button
@@ -44,6 +68,8 @@ wot changelog
 wot doctor ./my-project
 wot usage ./my-project
 wot lint ./my-project
+wot agent list
+wot agent init --client cursor
 wot mcp
 ```
 
@@ -51,7 +77,7 @@ wot mcp
 
 ### 组件知识
 
-- `wot list [keyword]`：列出可用的 wot-ui 组件，支持按名称过滤
+- `wot list [keyword]`：列出可用的 wot-ui 组件，支持按名称、中文名、标签、分类和描述过滤
 - `wot info <component>`：查看组件 props、events、slots、CSS 变量
 - `wot doc <component>`：输出组件 markdown 文档
 - `wot demo <component> [name]`：查看 demo 列表或指定 demo 源码
@@ -63,6 +89,66 @@ wot mcp
 - `wot doctor [dir]`：检查项目依赖、运行环境与基础集成情况
 - `wot usage [dir]`：统计 `.vue` 文件中的 `wd-*` 使用情况
 - `wot lint [dir]`：检查未知组件、空按钮等规则
+
+### Agent 接入
+
+#### 复制给 AI，一键接入
+
+将下面这段提示词复制到 Claude Code、Cursor、VS Code 或 Codex，让当前 AI Agent 自动完成接入：
+
+```text
+请在当前项目根目录接入 wot-ui 的 AI 开发能力，并直接执行所需命令：
+
+1. 确认 Node.js 版本不低于 20。
+2. 执行 `npm install -g @wot-ui/cli@latest` 安装或更新全局 CLI。不要使用 sudo；如果全局安装因权限受限而失败，改用 `npx -y @wot-ui/cli@latest` 运行后续命令，并在结果中说明。
+3. 识别你当前所在的 AI 客户端，并使用对应的 client id：Claude Code 使用 claude，Cursor 使用 cursor，VS Code 使用 vscode，Codex 使用 codex。只配置当前客户端；如果无法确定，请先询问我，不要猜测。
+4. 执行 `wot agent init --client <client-id> --scope project --with mcp,skill,instructions --yes` 完成项目级接入；不要手动覆盖现有配置。若上一步回退到 npx，则用 `npx -y @wot-ui/cli@latest` 代替 `wot`。
+5. 执行 `wot agent doctor --client <client-id> --scope project --with mcp,skill,instructions` 检查配置、MCP handshake、Skill 和 Instructions；使用与上一步相同的 CLI 执行方式。
+6. 最后告诉我：CLI 安装结果、识别到的客户端、修改了哪些文件、doctor 检查结果，以及是否需要我重启客户端或批准项目 MCP。
+
+请保留项目中已有的 MCP Server 和用户内容；如果命令失败，不要绕过安全检查，说明具体原因和建议的处理方式。
+```
+
+这段提示词会优先安装全局 `wot` 命令，并在权限受限时安全回退到 `npx`。生成的 MCP 配置、安装的 Skill 和 Instructions 会持久保留在项目中；`agent init` 是幂等操作，重复执行不会重复添加配置。
+
+也可以手动执行：
+
+```bash
+wot agent list
+wot agent init --client cursor
+wot agent status --client cursor
+wot agent doctor --client cursor
+wot agent remove --client cursor
+```
+
+`agent init` 默认同时安装三项能力：
+
+- 在客户端项目配置中注册 `wot-ui` MCP Server
+- 安装仓库内置的 `wot-ui-v2` Skill
+- 在 `AGENTS.md` 或 `CLAUDE.md` 中维护 open-wot 自己拥有的 Instructions 区块
+
+当前 npm 发布包只随附以下两个 Skill：
+
+| Skill | 主要用途 | 随 npm 发布 | `agent init` 默认安装 |
+| --- | --- | --- | --- |
+| `wot-ui-v2` | 组件选型、API 查询、页面生成与组件问题排查 | 是 | 是 |
+| `wot-ui-cli` | CLI、MCP、数据提取与 open-wot 仓库维护 | 是 | 否 |
+
+可通过 `--with` 限制能力范围：
+
+```bash
+wot agent init --client codex --with mcp
+wot agent init --client claude --with skill,instructions
+wot agent status --client claude --with skill,instructions
+wot agent doctor --client claude --with skill,instructions
+wot agent init --client cursor --dry-run
+```
+
+`status` 和 `doctor` 只检查 `--with` 选中的能力；未选择 MCP 时，`doctor` 不会启动 MCP Server。
+
+`init` 和 `remove` 支持 `--dry-run`。写操作在交互式终端中会请求确认；脚本和 CI 必须显式传入 `--yes`。重复执行是幂等的，删除操作只移除 `wot-ui` MCP 条目、未修改的内置 Skill 文件和 open-wot 托管 Instructions 区块。
+
+若 Instructions 中的 open-wot 标记残缺、顺序错误或重复，CLI 会拒绝修改，避免误删用户内容。
 
 ### 通用参数
 
@@ -85,7 +171,56 @@ wot list --format json --version latest
 
 ## MCP 集成
 
+`wot mcp` 保留默认启动 stdio Server 的行为；在脚本或文档中也可以使用语义更明确的 `wot mcp serve`。
+
+推荐使用 CLI 自动配置：
+
+```bash
+wot mcp list
+wot mcp init --client cursor
+wot mcp status --client cursor
+wot mcp doctor --client cursor
+```
+
+支持的客户端和 project scope 配置位置：
+
+| Client | 配置文件 | 根字段 |
+| --- | --- | --- |
+| Claude Code | `.mcp.json` | `mcpServers` |
+| Cursor | `.cursor/mcp.json` | `mcpServers` |
+| VS Code | `.vscode/mcp.json` | `servers` |
+| Codex | `.codex/config.toml` | `mcp_servers.wot-ui` |
+
+Claude Code、Cursor 和 Codex 同时支持 `--scope user`；VS Code 当前使用 project scope。管理命令支持 `--format json`，`init`、`status`、`doctor`、`remove` 和 `print` 支持通过 `--pin [version]` 固定生成配置中的 `@wot-ui/cli` 版本；只有会写文件的 `init` 和 `remove` 支持 `--dry-run`。
+
+dry-run 和 JSON 结果只输出托管配置节点的安全预览，不输出配置文件完整内容或其他 Server 的环境变量。写操作还可以使用 `--client all` 一次处理所有支持当前 scope 的客户端。
+
+Codex adapter 会在写入前后验证完整 TOML。若现有配置使用 `[mcp_servers.wot-ui.env]` 等外部嵌套子表，CLI 会拒绝自动接管或删除；请先将自定义字段迁移到主 Server 定义，再重新执行命令。
+
+`doctor` 分三层检查配置、MCP handshake 和客户端注册状态。Handshake 会验证 Server 名称以及 `wot_status`、`wot_list` 核心工具；Claude Code 和 Codex 会进一步调用客户端 CLI 查询注册状态。Cursor、VS Code 没有稳定查询接口时会显示 `server-ready`，提示用户重启客户端并在 MCP 面板确认，而不会将它描述为客户端已经就绪。需要用户批准或信任项目时退出码为 `2`，配置或 handshake 失败时退出码为 `1`。
+
+只需要查看配置而不写文件时：
+
+```bash
+wot mcp print --client vscode
+```
+
+也可以手动配置。推荐使用无需全局安装的 `npx` 方式：
+
 将以下配置加入支持 MCP 的客户端：
+
+```json
+{
+  "mcpServers": {
+    "wot-ui": {
+      "command": "npx",
+      "args": ["-y", "@wot-ui/cli", "mcp"]
+    }
+  }
+}
+```
+
+如果已经全局安装 CLI，并且 AI 客户端可以从 `PATH` 中找到 `wot`，也可以使用：
 
 ```json
 {
@@ -98,20 +233,24 @@ wot list --format json --version latest
 }
 ```
 
+桌面应用不一定会继承终端中的 npm 全局 `PATH`，因此默认配置和 `wot mcp init` 仍使用兼容性更好的 `npx` 方式。
+
 当前 MCP Server 提供以下 tools：
 
 | Tool | 功能 | 主要参数 |
 | --- | --- | --- |
 | `wot_status` | 查看 MCP Server 与 `@wot-ui/cli` 状态，包括当前版本、是否有 CLI 更新及更新命令。 | 无 |
-| `wot_list` | 列出当前离线知识库中的 wot-ui 组件元数据，适合在生成页面前发现可用组件。 | `version` |
+| `wot_list` | 列出当前离线知识库中的组件摘要，不包含完整文档、API 与 demo 源码，适合在生成页面前发现可用组件。 | `version` |
 | `wot_info` | 查询单个组件的 props、events、slots、CSS 变量等结构化信息。 | `component`, `version` |
 | `wot_doc` | 获取单个组件的完整 markdown 文档，适合需要阅读用法细节或限制说明时调用。 | `component`, `version` |
-| `wot_demo` | 获取组件 demo 列表，或按 demo 名称获取指定示例源码。 | `component`, `demo`, `version` |
+| `wot_demo` | 获取不含源码的 demo 摘要列表；指定 demo 名称时获取完整示例源码。 | `component`, `demo`, `version` |
 | `wot_token` | 查询组件 CSS 变量；不传组件名时返回所有组件的 CSS 变量摘要。 | `component`, `version` |
 | `wot_changelog` | 查询 wot-ui v2 离线数据中的更新记录，可按版本或组件过滤。 | `version`, `component` |
 | `wot_lint` | 扫描本地项目中的 wot-ui 使用问题，例如未知组件、空按钮等规则。 | `dir`, `version` |
 
 其中 `version` 支持与 CLI 一致的写法，例如 `2.0`、`2.0.4`、`latest`；不传时会按项目依赖或离线数据自动解析。
+
+为控制 Agent 上下文占用，MCP 的 `wot_list` 只返回 `name`、`nameZh`、`tag`、`category`、`description` 和 `since`；需要组件 API、文档或示例源码时，再调用 `wot_info`、`wot_doc` 或带具体 demo 名称的 `wot_demo`。CLI 的 `list --format json` 与 `demo --format json` 继续保留原有详细结构，避免影响已有脚本。
 
 ## 数据来源
 
@@ -205,7 +344,7 @@ MCP 走 stdio，终端无交互输出属于正常现象。若要查看 tools 与
 
 - `.github/workflows/ci.yml`：在 `push`/`PR` 时执行 lint、typecheck、build、test（多 OS × Node 版本矩阵）
 - `.github/workflows/sync.yml`：每日 02:00 UTC 自动检测 `@wot-ui/ui` 最新版本，有更新时拉取全量多版本快照并创建同步 PR；也可手动触发单版本提取
-- `.github/workflows/release.yml`：`v*` tag 触发自动发布 `@wot-ui/cli` 到 npm（发布前自动运行 `pnpm compress && pnpm build`，npm 包只含 `.json.gz`）
+- `.github/workflows/release.yml`：`v*` tag 触发自动发布 `@wot-ui/cli` 到 npm；`prepublishOnly` 依次执行 `pnpm build` 和 `pnpm compress`，发布包携带压缩后的组件数据及 `versions.json` 版本索引
 - `.github/workflows/coverage-upload.yml`：`v*` tag 触发，上传测试覆盖率到 Codecov
 
 ## 当前边界
