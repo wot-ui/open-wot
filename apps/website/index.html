@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Open Wot 通过 CLI、MCP 和离线 Skills，让 AI 编程工具获得准确、版本匹配的 wot-ui 组件知识。">
+    <meta name="keywords" content="wot-ui, Vue, uni-app, CLI, MCP, AI 编程, 组件库, 离线文档">
+    <meta name="author" content="Open Wot contributors">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Open Wot — 让 AI 真正懂 wot-ui">
+    <meta property="og:description" content="真实组件 API、版本匹配知识，一条命令接入你的 AI 编程工具。">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Open Wot — 让 AI 真正懂 wot-ui">
+    <meta name="twitter:description" content="真实组件 API、版本匹配知识，一条命令接入你的 AI 编程工具。">
+    <title>Open Wot — 让 AI 真正懂 wot-ui</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="./theme.js"></script>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="scan-lines" aria-hidden="true"></div>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <header class="site-header" data-header>
+      <nav class="nav shell" aria-label="主导航">
+        <a class="brand cursor-pointer" href="#top" aria-label="Open Wot 首页">
+          <span class="brand-mark" aria-hidden="true"><span>&gt;</span>_</span>
+          <span>OPEN_WOT</span>
+        </a>
+
+        <button class="nav-toggle cursor-pointer" type="button" aria-expanded="false" aria-controls="nav-panel" data-nav-toggle>
+          <span class="sr-only">展开导航</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+
+        <div class="nav-panel" id="nav-panel" data-nav-panel>
+          <div class="nav-links">
+            <a class="cursor-pointer" href="#features">[ 能力 ]</a>
+            <a class="cursor-pointer" href="#workflow">[ 接入 ]</a>
+            <a class="cursor-pointer" href="/docs">[ 文档 ]</a>
+            <a class="cursor-pointer" href="#open-source">[ 开源 ]</a>
+            <a class="cursor-pointer" href="https://github.com/wot-ui/open-wot">[ 源码 ]</a>
+          </div>
+          <label class="theme-picker cursor-pointer" title="选择主题色">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 4.5 5 5M13 6l5 5M4 20l4.2-1.1L19 8.1a2.1 2.1 0 0 0-3-3L5.1 16 4 20Z"/><path d="M12 18h8"/></svg>
+            <i class="theme-picker-swatch" aria-hidden="true"></i>
+            <span class="theme-picker-mobile-label">选择主题色</span>
+            <input type="color" value="#39d353" aria-label="选择网站主题色" data-theme-picker>
+          </label>
+          <a class="button button-small button-solid cursor-pointer" href="#install">立即接入_AGENT</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero shell" id="top">
+        <div class="hero-brand reveal">
+          <div class="eyebrow"><span class="status-dot"></span> 系统在线 · V1.0.5-BETA.1</div>
+          <h1 aria-label="Open Wot">OPEN<br><span>WOT</span><i class="cursor-blink" aria-hidden="true"></i></h1>
+          <p class="hero-kicker">AI 写代码之前<br>应该先读懂真实 API。</p>
+        </div>
+
+        <div class="hero-copy reveal reveal-delay">
+          <div class="section-index">[ 00 / AGENT 上下文层 ]</div>
+          <h2>让你的 AI 编程工具真正懂 wot-ui。</h2>
+          <p>
+            Open Wot 将真实的组件 API、文档、示例和版本历史打包成离线知识层，接入你的终端与 AI 编程工具。
+            <strong>不再猜测属性，直接生成可用界面。</strong>
+          </p>
+          <div class="hero-actions">
+            <a class="button button-solid cursor-pointer" href="#install">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg>
+              快速开始
+            </a>
+            <a class="button button-outline cursor-pointer" href="https://github.com/wot-ui/open-wot">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3.3-.4 6.8-1.6 6.8-7A5.4 5.4 0 0 0 19.4 4 5 5 0 0 0 19.3.5S18.2.1 15 1.8a13.4 13.4 0 0 0-6 0C5.8.1 4.7.5 4.7.5A5 5 0 0 0 4.6 4a5.4 5.4 0 0 0-1.4 3.7c0 5.4 3.5 6.5 6.8 7A4.8 4.8 0 0 0 9 18v4M9 19c-3 .9-3-1.5-4-2"/></svg>
+              查看源码
+            </a>
+          </div>
+          <dl class="hero-specs">
+            <div><dt>安装包</dt><dd>@wot-ui/cli</dd></div>
+            <div><dt>运行时</dt><dd>NODE.JS ≥ 20</dd></div>
+            <div><dt>许可证</dt><dd>MIT</dd></div>
+            <div><dt>模式</dt><dd><span class="status-dot"></span> 离线可用</dd></div>
+          </dl>
+        </div>
+
+        <div class="hero-orbit" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="orbit-core">&gt;_</div>
+          <span class="orbit-label label-one">MCP</span>
+          <span class="orbit-label label-two">CLI</span>
+          <span class="orbit-label label-three">SKILL</span>
+        </div>
+      </section>
+
+      <section class="signal-strip" aria-label="产品能力">
+        <div class="marquee">
+          <div class="marquee-track">
+            <span>真实组件属性</span><i>+</i><span>版本精准匹配</span><i>+</i><span>离线知识库</span><i>+</i><span>8 个 MCP 工具</span><i>+</i><span>4 类 AI 客户端</span><i>+</i>
+            <span aria-hidden="true">真实组件属性</span><i aria-hidden="true">+</i><span aria-hidden="true">版本精准匹配</span><i aria-hidden="true">+</i><span aria-hidden="true">离线知识库</span><i aria-hidden="true">+</i><span aria-hidden="true">8 个 MCP 工具</span><i aria-hidden="true">+</i><span aria-hidden="true">4 类 AI 客户端</span><i aria-hidden="true">+</i>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell" id="features">
+        <div class="section-heading">
+          <div>
+            <div class="section-index">[ 01 / 知识，而不是猜测 ]</div>
+            <h2>补上 AI 缺失的组件知识层。</h2>
+          </div>
+          <p>三种接口，一份可信数据源。每个答案都基于你项目真正安装的组件库版本。</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <div class="card-topline">
+              <span>01</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6m8 12h8"/></svg>
+            </div>
+            <div class="feature-command">$ wot info Button<span class="cursor-blink">_</span></div>
+            <h3>在终端得到准确答案。</h3>
+            <p>不离开终端即可查找组件、检查 API、阅读文档、提取示例、查询变量并追踪更新记录。</p>
+            <a class="text-link cursor-pointer" href="/docs#component-knowledge">查看_CLI_文档 <span>↗</span></a>
+          </article>
+
+          <article class="feature-card reveal reveal-delay">
+            <div class="card-topline">
+              <span>02</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v1H7a3 3 0 0 0-3 3v2H2v2h2v2a3 3 0 0 0 3 3h2v1a3 3 0 0 0 6 0v-1h2a3 3 0 0 0 3-3v-2h2v-2h-2V9a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3Z"/><path d="M9 10h.01M15 10h.01M9 14c1.5 1 4.5 1 6 0"/></svg>
+            </div>
+            <div class="feature-command">MCP :: 8 个工具 :: 已就绪</div>
+            <h3>为 AI 提供原生上下文。</h3>
+            <p>通过标准 MCP Server，将 wot-ui 知识接入 Cursor、Claude Code、VS Code 或 Codex。</p>
+            <a class="text-link cursor-pointer" href="#install">连接_AGENT <span>↗</span></a>
+          </article>
+
+          <article class="feature-card reveal reveal-delay-2">
+            <div class="card-topline">
+              <span>03</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+            </div>
+            <div class="feature-command">本地数据 :: 无需 API KEY</div>
+            <h3>默认离线，自动识别版本。</h3>
+            <p>知识随 npm 包发布，并根据项目依赖解析正确版本，让生成代码始终保持兼容。</p>
+            <a class="text-link cursor-pointer" href="https://github.com/wot-ui/open-wot/tree/main/data">查看_DATA <span>↗</span></a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section section-terminal" id="workflow">
+        <div class="shell terminal-layout">
+          <div class="terminal-copy">
+            <div class="section-index">[ 02 / 从安装到可用 ]</div>
+            <h2>30 秒接入真实上下文。</h2>
+            <p>只需初始化一次，Open Wot 会配置 MCP、安装 wot-ui Skill 并写入托管项目指引。AI 在写代码之前，就能拿到正确上下文。</p>
+            <ol class="steps">
+              <li><span>01</span><div><strong>安装</strong><small>获取最新 CLI。</small></div></li>
+              <li><span>02</span><div><strong>初始化</strong><small>选择你的 AI 编程客户端。</small></div></li>
+              <li><span>03</span><div><strong>验证</strong><small>执行真实 MCP 握手。</small></div></li>
+              <li><span>04</span><div><strong>开始构建</strong><small>让 AI 查询，而不是猜测。</small></div></li>
+            </ol>
+          </div>
+
+          <div class="terminal-window" id="install">
+            <div class="terminal-chrome">
+              <div><i></i><i></i><i></i></div>
+              <span>open-wot — zsh — 90×28</span>
+              <span>运行中</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">➜</span><span class="path">~/project</span><span>npm install -g @wot-ui/cli@latest</span></div>
+              <div class="terminal-output">+ @wot-ui/cli@1.0.5-beta.1</div>
+              <div class="terminal-line"><span class="prompt">➜</span><span class="path">~/project</span><span>wot agent init --client codex</span></div>
+              <div class="terminal-output">
+                <span class="ok">✓</span> MCP Server 已配置<br>
+                <span class="ok">✓</span> wot-ui-v2 Skill 已安装<br>
+                <span class="ok">✓</span> 托管 Instructions 已写入
+              </div>
+              <div class="terminal-line"><span class="prompt">➜</span><span class="path">~/project</span><span>wot agent doctor --client codex</span></div>
+              <div class="terminal-output">
+                <span class="muted">检查运行环境..........</span> <span class="ok">通过</span><br>
+                <span class="muted">检查配置文件..........</span> <span class="ok">通过</span><br>
+                <span class="muted">MCP 真实握手...........</span> <span class="ok">通过</span>
+              </div>
+              <div class="terminal-ready">
+                <span class="ok">系统已就绪。</span> 你的 AI 现在真正懂 wot-ui。
+              </div>
+              <div class="terminal-line"><span class="prompt">➜</span><span class="path">~/project</span><span class="cursor-block cursor-blink"></span></div>
+            </div>
+            <button class="copy-button cursor-pointer" type="button" data-copy="npm install -g @wot-ui/cli@latest&#10;wot agent init --client codex&#10;wot agent doctor --client codex" aria-label="复制安装命令">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>复制命令</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section docs-section" id="docs">
+        <div class="shell">
+          <div class="section-heading docs-heading">
+            <div>
+              <div class="section-index">[ 03 / 文档中心 ]</div>
+              <h2>从第一次查询，到完整接入。</h2>
+            </div>
+          <p>首页提供可直接执行的接入指南；完整中文文档已内置站内，包含 16 个章节、命令参考、故障排查与开发维护。</p>
+          </div>
+
+          <div class="docs-quickstart">
+            <article class="docs-intro-card">
+              <div class="docs-card-label">30 秒快速开始</div>
+              <h3>安装、接入、验证。</h3>
+              <p>需要 Node.js ≥ 20。将 <code>cursor</code> 替换为你正在使用的客户端 ID。</p>
+              <pre><code><span class="syntax-muted"># 1. 安装最新版本</span>
+<span class="syntax-keyword">npm</span> install -g @wot-ui/cli@latest
+
+<span class="syntax-muted"># 2. 接入 Agent 能力</span>
+<span class="syntax-keyword">wot</span> agent init --client cursor
+
+<span class="syntax-muted"># 3. 执行真实握手验证</span>
+<span class="syntax-keyword">wot</span> agent doctor --client cursor</code></pre>
+              <button class="docs-copy cursor-pointer" type="button" data-doc-copy="npm install -g @wot-ui/cli@latest&#10;wot agent init --client cursor&#10;wot agent doctor --client cursor">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>复制快速开始</span>
+              </button>
+            </article>
+
+            <div class="docs-result-stack">
+              <div class="docs-card-label">初始化完成后</div>
+              <article>
+                <span>01</span>
+                <div><strong>MCP SERVER</strong><p>AI 可以按需调用 8 个 wot-ui 工具。</p></div>
+                <i>已就绪</i>
+              </article>
+              <article>
+                <span>02</span>
+                <div><strong>WOT-UI-V2 SKILL</strong><p>AI 知道何时、如何选择与使用组件。</p></div>
+                <i>已就绪</i>
+              </article>
+              <article>
+                <span>03</span>
+                <div><strong>INSTRUCTIONS</strong><p>生成代码前，主动查询真实组件知识。</p></div>
+                <i>已就绪</i>
+              </article>
+              <div class="docs-note">
+                <span>提示</span>
+                配置完成后请重启客户端；若出现“信任项目”或“批准 MCP Server”，请按客户端提示确认。
+              </div>
+            </div>
+          </div>
+
+          <div class="client-matrix">
+            <div class="docs-card-label">支持的 AI 编程客户端</div>
+            <div class="client-row client-head"><span>客户端</span><span>客户端 ID</span><span>项目配置</span><span>用户级</span></div>
+            <div class="client-row"><strong>Claude Code</strong><code>claude</code><span>.mcp.json</span><i>支持</i></div>
+            <div class="client-row"><strong>Cursor</strong><code>cursor</code><span>.cursor/mcp.json</span><i>支持</i></div>
+            <div class="client-row"><strong>VS Code</strong><code>vscode</code><span>.vscode/mcp.json</span><i>项目级</i></div>
+            <div class="client-row"><strong>Codex</strong><code>codex</code><span>.codex/config.toml</span><i>支持</i></div>
+          </div>
+
+          <div class="docs-reference">
+            <div class="docs-tabs" role="tablist" aria-label="命令文档分类">
+              <button class="cursor-pointer is-active" type="button" role="tab" aria-selected="true" data-doc-tab="cli">CLI 查询</button>
+              <button class="cursor-pointer" type="button" role="tab" aria-selected="false" data-doc-tab="agent">Agent 接入</button>
+              <button class="cursor-pointer" type="button" role="tab" aria-selected="false" data-doc-tab="mcp">MCP 工具</button>
+              <button class="cursor-pointer" type="button" role="tab" aria-selected="false" data-doc-tab="safety">安全机制</button>
+            </div>
+
+            <div class="docs-panels">
+              <div class="docs-panel is-active" role="tabpanel" data-doc-panel="cli">
+                <div class="panel-heading">
+                  <div><span>CLI / 组件知识</span><h3>在终端查询真实 wot-ui 数据。</h3></div>
+                  <code>wot --help</code>
+                </div>
+                <div class="command-table">
+                  <div><code>wot list [keyword]</code><span>按名称、中文名、标签、分类或描述查找组件</span></div>
+                  <div><code>wot info &lt;component&gt;</code><span>查询 props、events、slots 和 CSS 变量</span></div>
+                  <div><code>wot doc &lt;component&gt;</code><span>获取完整 Markdown 组件文档</span></div>
+                  <div><code>wot demo &lt;component&gt; [name]</code><span>查看示例列表或指定 demo 源码</span></div>
+                  <div><code>wot token [component]</code><span>查询全局或组件 CSS 变量</span></div>
+                  <div><code>wot changelog [version] [component]</code><span>按版本或组件查看更新记录</span></div>
+                  <div><code>wot usage [dir]</code><span>统计项目中的 wd-* 组件使用情况</span></div>
+                  <div><code>wot lint [dir]</code><span>检查未知组件、空按钮等使用问题</span></div>
+                </div>
+                <div class="panel-example"><span>示例</span><code>wot info Button --version 2.0.4 --format markdown</code></div>
+              </div>
+
+              <div class="docs-panel" role="tabpanel" data-doc-panel="agent" hidden>
+                <div class="panel-heading">
+                  <div><span>AGENT / 推荐入口</span><h3>统一管理 MCP、Skill 与项目指引。</h3></div>
+                  <code>wot agent list</code>
+                </div>
+                <div class="command-table">
+                  <div><code>wot agent init</code><span>初始化 MCP、Skill 和 Instructions</span></div>
+                  <div><code>wot agent status</code><span>检查三类能力的配置状态</span></div>
+                  <div><code>wot agent doctor</code><span>检查文件并执行真实 MCP handshake</span></div>
+                  <div><code>wot agent remove</code><span>只删除 Open Wot 托管的接入内容</span></div>
+                </div>
+                <div class="option-list">
+                  <span><code>--client auto|all|claude|cursor|vscode|codex</code></span>
+                  <span><code>--scope project|user</code></span>
+                  <span><code>--with mcp,skill,instructions</code></span>
+                  <span><code>--dry-run</code> 预览，不写入</span>
+                  <span><code>--pin [version]</code> 固定 CLI 版本</span>
+                </div>
+                <div class="panel-example"><span>多客户端</span><code>wot agent init --client all --with mcp,skill,instructions</code></div>
+              </div>
+
+              <div class="docs-panel" role="tabpanel" data-doc-panel="mcp" hidden>
+                <div class="panel-heading">
+                  <div><span>MCP / 8 个工具</span><h3>让 AI 按需读取组件知识。</h3></div>
+                  <code>wot mcp</code>
+                </div>
+                <div class="mcp-tool-grid">
+                  <div><code>wot_status</code><span>Server、CLI 版本与更新状态</span></div>
+                  <div><code>wot_list</code><span>组件发现与摘要</span></div>
+                  <div><code>wot_info</code><span>props、events、slots、CSS 变量</span></div>
+                  <div><code>wot_doc</code><span>完整组件文档</span></div>
+                  <div><code>wot_demo</code><span>demo 摘要或指定示例源码</span></div>
+                  <div><code>wot_token</code><span>组件 CSS 变量</span></div>
+                  <div><code>wot_changelog</code><span>版本与组件更新记录</span></div>
+                  <div><code>wot_lint</code><span>项目中的 wot-ui 使用问题</span></div>
+                </div>
+                <div class="panel-example"><span>只接入 MCP</span><code>wot mcp init --client cursor</code></div>
+              </div>
+
+              <div class="docs-panel" role="tabpanel" data-doc-panel="safety" hidden>
+                <div class="panel-heading">
+                  <div><span>SAFE WRITE / 保守写入</span><h3>修改配置，但不破坏用户内容。</h3></div>
+                  <code>--dry-run</code>
+                </div>
+                <div class="safety-grid">
+                  <article><span>01</span><strong>先计算计划</strong><p>写入前生成 ChangePlan，可先预览再执行。</p></article>
+                  <article><span>02</span><strong>幂等与原子写入</strong><p>重复初始化不会重复插入，失败时自动回滚。</p></article>
+                  <article><span>03</span><strong>保留已有配置</strong><p>保留已有 Server、JSONC 注释与非托管 TOML。</p></article>
+                  <article><span>04</span><strong>安全失败</strong><p>遇到非法或无法安全接管的结构时直接停止。</p></article>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="version-resolution">
+            <div>
+              <div class="docs-card-label">版本解析顺序</div>
+              <h3>不指定版本，也能找到正确答案。</h3>
+              <p>查询命令支持 <code>--format text|json|markdown</code>。结构化结果写入 stdout，诊断信息保持在 stderr。</p>
+            </div>
+            <ol>
+              <li><span>01</span><strong>项目已安装版本</strong><small>优先读取真实安装结果</small></li>
+              <li><span>02</span><strong>依赖声明版本</strong><small>其次读取 package.json 范围</small></li>
+              <li><span>03</span><strong>最新离线数据</strong><small>未检测到版本时安全回退</small></li>
+            </ol>
+          </div>
+
+          <div class="docs-footer-link">
+            <span>继续阅读完整参数、手动 MCP 配置、常见问题与贡献指南。</span>
+            <a class="button button-outline cursor-pointer" href="/docs">打开完整中文文档 ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell" id="testimonials">
+        <div class="section-heading">
+          <div>
+            <div class="section-index">[ 04 / 工作流变化 ]</div>
+            <h2>你会感受到的具体变化。</h2>
+          </div>
+          <p>不放虚构客户 Logo，只展示 Open Wot 在真实开发会话中要带来的可验证结果。</p>
+        </div>
+
+        <div class="signal-grid">
+          <article class="signal-card">
+            <div class="signal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <blockquote>“AI 会先检查项目安装版本，再建议组件 API。”</blockquote>
+            <footer><span>版本对齐</span><small>依赖 → 数据 → 输出</small></footer>
+          </article>
+          <article class="signal-card">
+            <div class="signal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <blockquote>“组件属性、事件、插槽和示例会进入同一个上下文。”</blockquote>
+            <footer><span>完整上下文</span><small>API → 示例 → 实现</small></footer>
+          </article>
+          <article class="signal-card">
+            <div class="signal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4m0 12v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <blockquote>“整个流程保持本地、可检查，不依赖在线文档 API。”</blockquote>
+            <footer><span>本地优先</span><small>安装包 → 终端 → AGENT</small></footer>
+          </article>
+        </div>
+      </section>
+
+      <section class="section access-section" id="open-source">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <div class="section-index">[ 05 / 免费开源 ]</div>
+              <h2>从终端查询，到 Agent 完整接入。</h2>
+            </div>
+            <p>Open Wot 的核心能力采用 MIT 许可证开放。按你的工作流选择 CLI 查询、Agent 完整接入，或直接参与项目共建。</p>
+          </div>
+
+          <div class="access-grid">
+            <article class="access-card">
+              <div class="access-label">01 / 查询方式</div>
+              <div class="access-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m4 7 5 5-5 5M11 17h9"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg>
+              </div>
+              <h3>只用 CLI</h3>
+              <p>不改变现有工作流，在终端里直接查询真实的组件知识。</p>
+              <ul>
+                <li>组件搜索与 API 查询</li>
+                <li>文档、示例、变量与更新记录</li>
+                <li>JSON 或 Markdown 结构化输出</li>
+                <li>离线版本解析</li>
+              </ul>
+              <a class="button button-outline cursor-pointer" href="#install">安装_CLI</a>
+            </article>
+
+            <article class="access-card access-card-featured">
+              <div class="access-recommended">推荐接入方式</div>
+              <div class="access-label">02 / AGENT 工作流</div>
+              <div class="access-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>
+              </div>
+              <h3>完整接入 Agent</h3>
+              <p>把离线知识层接入 AI 编程工具，让生成和问答都有真实上下文。</p>
+              <ul>
+                <li>包含全部终端查询能力</li>
+                <li>8 个原生 MCP 工具</li>
+                <li>wot-ui-v2 Agent Skill</li>
+                <li>托管的项目 Instructions</li>
+                <li>支持 Cursor、Claude、VS Code、Codex</li>
+              </ul>
+              <a class="button button-solid cursor-pointer" href="#install">连接_AGENT</a>
+            </article>
+
+            <article class="access-card">
+              <div class="access-label">03 / 开源共建</div>
+              <div class="access-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 6h8M7.3 7.5l3.5 8.7m5.9-8.7-3.5 8.7"/></svg>
+              </div>
+              <h3>参与项目共建</h3>
+              <p>直接扩展数据管线、客户端适配器或组件知识模型。</p>
+              <ul>
+                <li>可审计的 TypeScript 源码</li>
+                <li>可扩展客户端适配器</li>
+                <li>版本化数据提取流程</li>
+                <li>开放的社区贡献工作流</li>
+              </ul>
+              <a class="button button-outline cursor-pointer" href="https://github.com/wot-ui/open-wot/blob/main/CONTRIBUTING.md">参与贡献</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta shell">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <div class="section-index">[ 06 / 等待输入 ]</div>
+        <h2>少一点幻觉。<br><span>多一点可用界面。</span></h2>
+        <p>只需接入一次，让每个 wot-ui 开发任务都拥有它需要的真实上下文。</p>
+        <div class="hero-actions">
+          <a class="button button-solid cursor-pointer" href="#install">开始初始化</a>
+          <a class="button button-outline cursor-pointer" href="https://github.com/wot-ui/open-wot">在_GITHUB_点亮_STAR</a>
+        </div>
+        <div class="cta-terminal" aria-hidden="true">
+          <span>root@open-wot:~$</span> 等待你的指令<span class="cursor-blink">█</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <div class="footer-brand">
+          <a class="brand cursor-pointer" href="#top">
+            <span class="brand-mark" aria-hidden="true"><span>&gt;</span>_</span>
+            <span>OPEN_WOT</span>
+          </a>
+          <p>让 AI 编程工具真正懂 wot-ui 的离线知识层。</p>
+          <div class="socials">
+            <a class="cursor-pointer" href="https://github.com/wot-ui/open-wot" aria-label="Open Wot 的 GitHub 仓库">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3.3-.4 6.8-1.6 6.8-7A5.4 5.4 0 0 0 19.4 4 5 5 0 0 0 19.3.5S18.2.1 15 1.8a13.4 13.4 0 0 0-6 0C5.8.1 4.7.5 4.7.5A5 5 0 0 0 4.6 4a5.4 5.4 0 0 0-1.4 3.7c0 5.4 3.5 6.5 6.8 7A4.8 4.8 0 0 0 9 18v4M9 19c-3 .9-3-1.5-4-2"/></svg>
+            </a>
+            <a class="cursor-pointer" href="https://www.npmjs.com/package/@wot-ui/cli" aria-label="Open Wot 的 npm 安装包">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12h-9v2H8v-2H3V6Z"/><path d="M7 9v6m0-6h8v6m0-6h2v6"/></svg>
+            </a>
+            <a class="cursor-pointer" href="https://wot-ui.cn" aria-label="Wot UI 官网">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h3>产品</h3>
+          <a href="#features">核心能力</a>
+          <a href="#workflow">接入流程</a>
+          <a href="/docs">文档中心</a>
+          <a href="#open-source">免费开源</a>
+          <a href="https://www.npmjs.com/package/@wot-ui/cli">npm 安装包</a>
+        </div>
+        <div class="footer-col">
+          <h3>资源</h3>
+          <a href="/docs">完整中文文档</a>
+          <a href="https://github.com/wot-ui/open-wot/tree/main/skills">Agent Skills</a>
+          <a href="https://github.com/wot-ui/open-wot/issues">问题反馈</a>
+          <a href="https://github.com/wot-ui/open-wot/blob/main/CONTRIBUTING.md">参与贡献</a>
+        </div>
+        <div class="footer-col">
+          <h3>法律与联系</h3>
+          <a href="https://github.com/wot-ui/open-wot/blob/main/LICENSE.md">MIT 许可证</a>
+          <a href="./privacy.html">隐私政策</a>
+          <a href="./terms.html">使用条款</a>
+          <a href="https://github.com/wot-ui/open-wot/issues">联系我们</a>
+        </div>
+      </div>
+      <div class="shell footer-bottom">
+        <span>© 2026 OPEN WOT 贡献者</span>
+        <span>构建于开放社区 /// 传输结束</span>
+      </div>
+    </footer>
+
+    <div class="toast" role="status" aria-live="polite" data-toast>命令已复制</div>
+    <script src="./script.js"></script>
+  </body>
+</html>

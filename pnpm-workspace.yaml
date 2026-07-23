@@ -6,14 +6,32 @@ shellEmulator: true
 
 trustPolicy: no-downgrade
 
+# Already present in the existing CLI lockfile; keep the exception pinned to the
+# exact reviewed version while retaining no-downgrade checks for every new package.
+trustPolicyExclude:
+  - chokidar@4.0.3
+
 packages:
+  - apps/*
   - playground
-  - docs
   - examples/*
 
 catalog:
+  '@cloudflare/vite-plugin': 1.37.1
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3
+  '@vitejs/plugin-react': 6.0.2
+  '@vitejs/plugin-rsc': 0.5.26
   '@vitest/coverage-v8': 4.0.15
   baseline-browser-mapping: ^2.10.18
+  marked: 18.0.7
+  next: 16.2.6
+  react: 19.2.6
+  react-dom: 19.2.6
+  react-server-dom-webpack: 19.2.6
+  vinext: 0.0.50
+  vite: 8.0.13
+  wrangler: 4.92.0
 
 catalogs:
   cli:

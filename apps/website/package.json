@@ -1,0 +1,36 @@
+{
+  "name": "@open-wot/website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
+    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+  },
+  "dependencies": {
+    "marked": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:cli",
+    "@cloudflare/vite-plugin": "catalog:",
+    "@types/node": "catalog:types",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitejs/plugin-rsc": "catalog:",
+    "eslint": "catalog:cli",
+    "react-server-dom-webpack": "catalog:",
+    "typescript": "catalog:cli",
+    "vinext": "catalog:",
+    "vite": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

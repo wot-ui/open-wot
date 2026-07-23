@@ -5,7 +5,7 @@ export default antfu(
   {
     type: 'lib',
     pnpm: true,
-    ignores: ['skills/**/*.md'],
+    ignores: ['apps/website/**', 'skills/**/*.md'],
   },
   {
     rules: {

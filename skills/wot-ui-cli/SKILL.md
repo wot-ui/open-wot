@@ -1,73 +1,108 @@
 ---
 name: wot-ui-cli
-description: '回答、使用、调试 @wot-ui/cli 时使用。关键词：wot、@wot-ui/cli、CLI、MCP、doctor、usage、lint、list、info、doc、demo、token、changelog、extract、wot mcp。适用于命令查询、参数说明、MCP 接入、本地调试、数据提取与 open-wot 仓库维护。'
-argument-hint: '命令名、参数、MCP 场景、调试问题或数据提取需求'
+description: 使用、调试或维护 @wot-ui/cli 与 open-wot 仓库。适用于 wot CLI 命令、Agent/MCP 接入、doctor/usage/lint、组件知识查询、客户端 adapter、离线数据提取、构建测试、发布包检查和仓库开发；如果任务是直接编写 wd-* 组件页面或解释组件 API，应改用 wot-ui-v2 skill。
 ---
 
-# Wot UI CLI Skill
+# Wot UI CLI
 
-这个 skill 用于让 Agent 在处理 `@wot-ui/cli` 本身相关的问题时，优先基于本仓库 README 与实际命令能力回答，而不是把它误当成纯组件库文档。
+处理 `@wot-ui/cli`、MCP、Agent 接入和 open-wot 仓库维护任务时，基于当前源码、`package.json` 和 README 行事，不根据旧文档猜测命令。
 
-## 适用场景
+## 路由
 
-- 用户询问 `wot` 命令怎么用。
-- 用户需要区分 `list`、`info`、`doc`、`demo`、`token`、`changelog`、`doctor`、`usage`、`lint`、`mcp`、`extract` 的用途。
-- 用户要接入 MCP Server，或需要 `wot mcp` 的配置与调试方法。
-- 用户要在本仓库中调试 `@wot-ui/cli`、验证构建产物、重新提取数据。
-- 用户的问题本质上是 open-wot 仓库维护问题，而不是单纯的 wot-ui 组件使用问题。
+- CLI、MCP、Agent、数据提取或仓库开发：使用本 Skill。
+- 组件选型、页面代码、props、主题和组件问题：使用 `wot-ui-v2` Skill。
+- 通过 CLI 查询组件知识时，保留 CLI 使用语境；需要生成组件代码时再切换到 `wot-ui-v2`。
 
-## 适用范围
+## 工作流
 
-- 关注对象是 `@wot-ui/cli` 这个工具包，以及仓库 `open-wot` 的开发维护流程。
-- 重点覆盖命令能力、通用参数、MCP、离线数据来源、提取流程、本地调试和发布包边界。
-- 如果任务是生成 `wd-*` 页面代码、解释组件 props 或给出主题定制方案，应优先使用 `wot-ui-v2` skill。
-
-## 推荐流程
-
-1. 先确认用户是在问 CLI 工具本身，还是在借 CLI 查询组件知识。
-2. 如果是命令使用问题，优先按命令类别回答：组件知识、项目分析、MCP、数据提取、仓库开发。
-3. 如果是仓库维护问题，优先给出本仓库里的实际调试命令，而不是泛泛而谈。
-4. 如果涉及组件内容本身，可引导或切换到 `wot-ui-v2` skill。
+1. 先查看 `README.md`、`package.json#scripts` 和相关源码。
+2. 修改 CLI、MCP、prompt、数据结构或 Skill 后，同步测试与 README。
+3. 写配置前先运行 `--dry-run`，使用隔离 `--cwd`，不要修改真实用户配置。
+4. 修改命令输出后，至少运行一个真实源码或构建产物命令。
+5. 提交前运行 `pnpm lint && pnpm typecheck && pnpm test && pnpm build`。
 
 ## 命令分组
 
-### 组件知识查询
+组件知识：
 
-- `wot list`
-- `wot info <Component>`
-- `wot doc <Component>`
-- `wot demo <Component> [name]`
-- `wot token [Component]`
-- `wot changelog [version] [component]`
+```bash
+wot list [keyword]
+wot info <component>
+wot doc <component>
+wot demo <component> [name]
+wot token [component]
+wot changelog [versionOrComponent] [component]
+```
 
-### 项目分析
+项目分析：
 
-- `wot doctor [dir]`
-- `wot usage [dir]`
-- `wot lint [dir]`
+```bash
+wot doctor [dir]
+wot usage [dir]
+wot lint [dir]
+```
 
-### MCP
+Agent 接入：
 
-- `wot mcp`
+```bash
+wot agent list
+wot agent init --client cursor
+wot agent status --client cursor
+wot agent doctor --client cursor
+wot agent remove --client cursor
+wot agent init --client all
+```
 
-### 数据提取与仓库维护
+MCP 管理：
 
-- `pnpm extract:cli --wot-dir ../wot-ui --output data/v2.json`
-- `pnpm extract:clone`
-- `pnpm exec tsx src/index.ts <command>`
-- `pnpm build`
-- `node dist/index.mjs <command>`
+```bash
+wot mcp
+wot mcp serve
+wot mcp list
+wot mcp init --client cursor
+wot mcp status --client cursor
+wot mcp doctor --client cursor
+wot mcp remove --client cursor
+wot mcp print --client cursor
+```
 
-## 工作规则
+查询命令支持 `--version` 和 `--format text|json|markdown`。Agent/MCP 管理命令支持的具体选项以 `--help` 和源码为准；写操作优先使用 `--dry-run`。
 
-- 包名是 `@wot-ui/cli`，实际可执行命令是 `wot`。
-- 回答命令问题时，优先用仓库 README 中已承诺的行为和参数，不臆造未声明子命令。
-- 回答本地调试问题时，优先给源码入口：`pnpm exec tsx src/index.ts ...`。
-- 回答构建产物问题时，再给 `node dist/index.mjs ...`。
-- 回答 MCP 问题时，要说明 `wot mcp` 走 stdio，终端无交互输出通常是正常现象。
-- 回答提取逻辑问题时，要说明数据主要来自上游 `wot-ui/wot-ui` 的 markdown 与 SCSS 源码。
-- 当用户问的是组件知识但入口是 CLI，也要保留“这是通过 CLI 查询组件知识”这一层语义。
+## 仓库开发
 
-## 参考资料
+```bash
+pnpm install
+pnpm dev
+pnpm exec tsx src/index.ts list
+pnpm build
+node dist/index.mjs list
+```
 
-- [Wot UI CLI 概览](./references/overview.md)
+更新离线数据：
+
+```bash
+pnpm sync:clone
+pnpm extract:clone
+pnpm sync --wot-dir ../wot-ui
+pnpm extract --wot-dir ../wot-ui --output data/v2.0.4.json
+```
+
+发布包检查：
+
+```bash
+pnpm build
+pnpm compress
+pnpm exec publint
+npm pack --dry-run --json
+```
+
+## MCP 注意事项
+
+- `wot mcp` 使用 stdio，终端无普通输出通常正常。
+- `doctor` 验证配置和真实 handshake；部分客户端还会检查注册状态。
+- `--client all` 在 project scope 处理四个支持客户端。
+- 保留已有 Server、JSONC 注释、非托管 TOML 和用户 Instructions。
+
+## 参考
+
+需要完整命令矩阵、目录职责、验证要求、数据与发布流程时，读取 [references/overview.md](./references/overview.md)。
