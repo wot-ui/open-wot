@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findComponent, listComponents } from '../src/data/metadata'
+import { filterComponents, findComponent, listComponents, toComponentSummary, toDemoSummary } from '../src/data/metadata'
 import { getLatestVersion } from '../src/data/version'
 
 describe('metadata', () => {
@@ -18,5 +18,24 @@ describe('metadata', () => {
     const latest = getLatestVersion()
     const components = listComponents(latest)
     expect(components.length).toBeGreaterThan(50)
+  })
+
+  it('filters components by names, tags, categories, and descriptions', () => {
+    const components = listComponents('2.2.0')
+
+    expect(filterComponents(components, 'button').some(component => component.name === 'Button')).toBe(true)
+    expect(filterComponents(components, '按钮').some(component => component.name === 'Button')).toBe(true)
+    expect(filterComponents(components, 'wd-button').map(component => component.name)).toContain('Button')
+    expect(filterComponents(components, '  ')).toBe(components)
+  })
+
+  it('creates component and demo summaries without large content fields', () => {
+    const component = findComponent('Button', '2.2.0')!
+    const componentSummary = toComponentSummary(component)
+    const demoSummary = toDemoSummary(component.demos![0]!)
+
+    expect(componentSummary).not.toHaveProperty('doc')
+    expect(componentSummary).not.toHaveProperty('props')
+    expect(demoSummary).not.toHaveProperty('code')
   })
 })

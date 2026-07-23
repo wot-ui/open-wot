@@ -8,6 +8,7 @@ describe('app cli registration', () => {
     const commandNames = program.commands.map(command => command.name()).sort()
 
     expect(commandNames).toEqual([
+      'agent',
       'changelog',
       'demo',
       'doc',

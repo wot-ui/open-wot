@@ -1,11 +1,14 @@
 import { Command } from 'commander'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { registerListCommand } from '../../src/commands/list'
-import { listComponents } from '../../src/data/metadata'
+import { filterComponents, listComponents } from '../../src/data/metadata'
 import { writeJson, writeLine } from '../../src/utils/output'
 import { runCli, setupCliIo } from '../helpers/cli'
 
 vi.mock('../../src/data/metadata', () => ({
+  filterComponents: vi.fn((components: any[], keyword?: string) => keyword
+    ? components.filter(component => component.name.toLowerCase().includes(keyword.toLowerCase()))
+    : components),
   listComponents: vi.fn(),
 }))
 
@@ -39,6 +42,16 @@ describe('list command', () => {
     await runCli(program, ['list'])
 
     expect(writeLine).toHaveBeenCalledWith(expect.stringContaining('wd-button'))
+  })
+
+  it('filters components by the optional keyword', async () => {
+    const program = new Command()
+    registerListCommand(program)
+
+    await runCli(program, ['list', 'button', '--format', 'json'])
+
+    expect(filterComponents).toHaveBeenCalledWith(expect.any(Array), 'button')
+    expect(writeJson).toHaveBeenCalledWith({ components: [expect.objectContaining({ name: 'Button' })] })
   })
 
   it('handles thrown errors', async () => {

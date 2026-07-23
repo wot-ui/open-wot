@@ -54,4 +54,58 @@ describe('cli', () => {
     expect(typeof output).toBe('string')
     expect(output).toContain('Button')
   })
+
+  it('preserves the detailed CLI list JSON contract', async () => {
+    await createCliProgram().parseAsync(['list', 'button', '--version', '2.0.0', '--format', 'json'], { from: 'user' })
+
+    const payload = JSON.parse(stdout.mock.calls.map(c => String(c[0])).join('')) as Record<string, any>
+    expect({
+      component: Object.keys(payload.components[0]).sort(),
+      root: Object.keys(payload).sort(),
+    }).toMatchInlineSnapshot(`
+      {
+        "component": [
+          "category",
+          "cssVars",
+          "demos",
+          "description",
+          "descriptionZh",
+          "doc",
+          "events",
+          "name",
+          "nameZh",
+          "props",
+          "since",
+          "slots",
+          "tag",
+        ],
+        "root": [
+          "components",
+        ],
+      }
+    `)
+  })
+
+  it('preserves the detailed CLI demo-list JSON contract', async () => {
+    await createCliProgram().parseAsync(['demo', 'Button', '--version', '2.0.0', '--format', 'json'], { from: 'user' })
+
+    const payload = JSON.parse(stdout.mock.calls.map(c => String(c[0])).join('')) as Record<string, any>
+    expect({
+      demo: Object.keys(payload.demos[0]).sort(),
+      root: Object.keys(payload).sort(),
+    }).toMatchInlineSnapshot(`
+      {
+        "demo": [
+          "code",
+          "description",
+          "name",
+          "title",
+        ],
+        "root": [
+          "component",
+          "demos",
+        ],
+      }
+    `)
+  })
 })

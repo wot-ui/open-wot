@@ -33,6 +33,12 @@ export interface DemoMeta {
   code: string
 }
 
+export interface DemoSummary {
+  name: string
+  title: string
+  description: string
+}
+
 export interface ChangelogEntry {
   version: string
   date?: string
@@ -55,6 +61,15 @@ export interface ComponentMeta {
   slots: SlotMeta[]
   cssVars: CssVarMeta[]
   demos?: DemoMeta[]
+}
+
+export interface ComponentSummary {
+  name: string
+  nameZh: string
+  tag: string
+  category: string
+  description: string
+  since: string
 }
 
 export interface MetadataFile {

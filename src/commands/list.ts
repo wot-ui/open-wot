@@ -1,15 +1,15 @@
 import type { Command } from 'commander'
 import process from 'node:process'
-import { listComponents } from '../data/metadata'
+import { filterComponents, listComponents } from '../data/metadata'
 import { writeJson, writeLine } from '../utils/output'
 import { addQueryOptions, getComponentDescription, getComponentLabel, normalizeQueryOptions, printError } from './shared'
 
 export function registerListCommand(program: Command): void {
-  addQueryOptions(program.command('list').description('List available wot-ui components'))
-    .action((options) => {
+  addQueryOptions(program.command('list').argument('[keyword]', 'Filter by component name, tag, category, or description').description('List available wot-ui components'))
+    .action((keyword, options) => {
       const query = normalizeQueryOptions(options)
       try {
-        const components = listComponents(query.version)
+        const components = filterComponents(listComponents(query.version), keyword)
         if (query.format === 'json') {
           writeJson({ components })
           return

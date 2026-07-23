@@ -4,13 +4,17 @@ import process from 'node:process'
 import * as z from 'zod/v4'
 import packageJson from '../../package.json'
 import { loadMetadataFile } from '../data/loader'
-import { findComponent, listComponents } from '../data/metadata'
+import { findComponent, listComponents, toComponentSummary, toDemoSummary } from '../data/metadata'
 import { resolveVersion } from '../data/version'
 import { lintProject } from '../utils/scanner'
 import { getCliUpdateStatus } from '../utils/update-check'
 
 function jsonText(value: unknown): string {
   return JSON.stringify(value, null, 2)
+}
+
+function compactJsonText(value: unknown): string {
+  return JSON.stringify(value)
 }
 
 export interface RegisterMcpToolsOptions {
@@ -58,8 +62,8 @@ export function registerMcpTools(server: McpServer, options: RegisterMcpToolsOpt
       openWorldHint: false,
     },
   }, async ({ version }) => {
-    const components = listComponents(version)
-    return { content: [{ type: 'text', text: jsonText({ components }) }] }
+    const components = listComponents(version).map(toComponentSummary)
+    return { content: [{ type: 'text', text: compactJsonText({ components }) }] }
   })
 
   server.registerTool('wot_info', {
@@ -108,7 +112,7 @@ export function registerMcpTools(server: McpServer, options: RegisterMcpToolsOpt
     if (!result)
       return { isError: true, content: [{ type: 'text', text: `Component not found: ${component}` }] }
     if (!demo)
-      return { content: [{ type: 'text', text: jsonText({ demos: result.demos ?? [] }) }] }
+      return { content: [{ type: 'text', text: jsonText({ demos: (result.demos ?? []).map(toDemoSummary) }) }] }
     const matched = result.demos?.find(item => item.name.toLowerCase() === demo.toLowerCase())
     if (!matched)
       return { isError: true, content: [{ type: 'text', text: `Demo not found: ${demo}` }] }

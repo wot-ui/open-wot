@@ -30,6 +30,15 @@ export function printError(message: string, format: QueryOptions['format']): voi
     console.error(formatLogMessage('error', message))
 }
 
+export function parsePositiveIntegerOption(value: string | undefined, defaultValue: number, optionName: string): number {
+  if (value === undefined)
+    return defaultValue
+  const parsed = Number(value)
+  if (!Number.isSafeInteger(parsed) || parsed <= 0)
+    throw new Error(`Invalid ${optionName} value "${value}". Expected a positive integer.`)
+  return parsed
+}
+
 export function getComponentLabel(component: ComponentMeta): string {
   return `${component.name} ${component.nameZh}`
 }

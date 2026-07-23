@@ -30,6 +30,9 @@ catalogs:
     eslint:
       specifier: ^9.39.2
       version: 9.39.2
+    jsonc-parser:
+      specifier: ^3.3.1
+      version: 3.3.1
     lint-staged:
       specifier: ^16.2.7
       version: 16.2.7
@@ -39,6 +42,9 @@ catalogs:
     simple-git-hooks:
       specifier: ^2.13.1
       version: 2.13.1
+    smol-toml:
+      specifier: ^1.7.0
+      version: 1.7.0
     tsdown:
       specifier: ^0.17.3
       version: 0.17.3
@@ -96,6 +102,12 @@ importers:
       commander:
         specifier: catalog:cli
         version: 14.0.2
+      jsonc-parser:
+        specifier: catalog:cli
+        version: 3.3.1
+      smol-toml:
+        specifier: catalog:cli
+        version: 1.7.0
       zod:
         specifier: catalog:cli
         version: 4.3.6
@@ -2314,6 +2326,10 @@ packages:
   slice-ansi@7.1.0:
     resolution: {integrity: sha512-bSiSngZ/jWeX93BqeIAbImyTbEihizcwNjFoRUIY/T1wWQsfsm2Vw1agPKylXvQTU7iASGdHhyqRlqQzfz+Htg==}
     engines: {node: '>=18'}
+
+  smol-toml@1.7.0:
+    resolution: {integrity: sha512-aqVvWoyO21L23mb+drl4RmMXbf6N7FdHjAhTRA9ZBL7apWBgfWC16KjrASI+1p9GAroljyMHj6fK67i0UiTNvQ==}
+    engines: {node: '>= 18'}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -4883,6 +4899,8 @@ snapshots:
     dependencies:
       ansi-styles: 6.2.1
       is-fullwidth-code-point: 5.0.0
+
+  smol-toml@1.7.0: {}
 
   source-map-js@1.2.1: {}
 

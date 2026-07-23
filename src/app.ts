@@ -1,5 +1,6 @@
 import { Command } from 'commander'
 import packageJson from '../package.json'
+import { registerAgentCommand } from './commands/agent'
 import { registerChangelogCommand } from './commands/changelog'
 import { registerDemoCommand } from './commands/demo'
 import { registerDocCommand } from './commands/doc'
@@ -29,6 +30,7 @@ export function createCliProgram(): Command {
   registerUsageCommand(program)
   registerLintCommand(program)
   registerMcpCommand(program)
+  registerAgentCommand(program)
 
   return program
 }
