@@ -19,11 +19,33 @@ open-wot 是 wot-ui 的 AI 工具链仓库，当前对外发布的核心包为 `
 
 ## 安装
 
+推荐全局安装 CLI：
+
 ```bash
-npm install -g @wot-ui/cli
+npm install -g @wot-ui/cli@latest
 ```
 
-安装完成后可直接使用 `wot` 命令。
+也可以使用其他包管理器：
+
+```bash
+pnpm add -g @wot-ui/cli@latest
+bun add -g @wot-ui/cli@latest
+```
+
+安装完成后可直接使用 `wot`：
+
+```bash
+wot list
+```
+
+如果只想临时运行，也可以使用包执行器，不会修改项目依赖：
+
+```bash
+pnpm dlx @wot-ui/cli@latest list
+npx -y @wot-ui/cli@latest list
+yarn dlx @wot-ui/cli@latest list
+bunx @wot-ui/cli@latest list
+```
 
 `wot` 在交互式终端启动时会自动检查 `@wot-ui/cli` 是否有新版本。检查结果最多缓存 24 小时，提示只写入 stderr，不会污染 `--format json` 的 stdout；CI 和非交互式环境会自动跳过。`wot mcp` 不会在启动时输出更新提示，MCP 客户端可通过 `wot_status` tool 查询 CLI 更新状态。若需要关闭检查，可设置 `WOT_DISABLE_UPDATE_CHECK=1` 或 `NO_UPDATE_NOTIFIER=1`。
 
@@ -69,6 +91,27 @@ wot mcp
 - `wot lint [dir]`：检查未知组件、空按钮等规则
 
 ### Agent 接入
+
+#### 复制给 AI，一键接入
+
+将下面这段提示词复制到 Claude Code、Cursor、VS Code 或 Codex，让当前 AI Agent 自动完成接入：
+
+```text
+请在当前项目根目录接入 wot-ui 的 AI 开发能力，并直接执行所需命令：
+
+1. 确认 Node.js 版本不低于 20。
+2. 执行 `npm install -g @wot-ui/cli@latest` 安装或更新全局 CLI。不要使用 sudo；如果全局安装因权限受限而失败，改用 `npx -y @wot-ui/cli@latest` 运行后续命令，并在结果中说明。
+3. 识别你当前所在的 AI 客户端，并使用对应的 client id：Claude Code 使用 claude，Cursor 使用 cursor，VS Code 使用 vscode，Codex 使用 codex。只配置当前客户端；如果无法确定，请先询问我，不要猜测。
+4. 执行 `wot agent init --client <client-id> --scope project --with mcp,skill,instructions --yes` 完成项目级接入；不要手动覆盖现有配置。若上一步回退到 npx，则用 `npx -y @wot-ui/cli@latest` 代替 `wot`。
+5. 执行 `wot agent doctor --client <client-id> --scope project --with mcp,skill,instructions` 检查配置、MCP handshake、Skill 和 Instructions；使用与上一步相同的 CLI 执行方式。
+6. 最后告诉我：CLI 安装结果、识别到的客户端、修改了哪些文件、doctor 检查结果，以及是否需要我重启客户端或批准项目 MCP。
+
+请保留项目中已有的 MCP Server 和用户内容；如果命令失败，不要绕过安全检查，说明具体原因和建议的处理方式。
+```
+
+这段提示词会优先安装全局 `wot` 命令，并在权限受限时安全回退到 `npx`。生成的 MCP 配置、安装的 Skill 和 Instructions 会持久保留在项目中；`agent init` 是幂等操作，重复执行不会重复添加配置。
+
+也可以手动执行：
 
 ```bash
 wot agent list
@@ -162,7 +205,7 @@ Codex adapter 会在写入前后验证完整 TOML。若现有配置使用 `[mcp_
 wot mcp print --client vscode
 ```
 
-也可以手动配置。通用 JSON 客户端示例：
+也可以手动配置。推荐使用无需全局安装的 `npx` 方式：
 
 将以下配置加入支持 MCP 的客户端：
 
@@ -176,6 +219,21 @@ wot mcp print --client vscode
   }
 }
 ```
+
+如果已经全局安装 CLI，并且 AI 客户端可以从 `PATH` 中找到 `wot`，也可以使用：
+
+```json
+{
+  "mcpServers": {
+    "wot-ui": {
+      "command": "wot",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+桌面应用不一定会继承终端中的 npm 全局 `PATH`，因此默认配置和 `wot mcp init` 仍使用兼容性更好的 `npx` 方式。
 
 当前 MCP Server 提供以下 tools：
 
