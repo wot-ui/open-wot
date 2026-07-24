@@ -199,7 +199,7 @@ export default function Docs() {
           <aside className="docs-toc" aria-label="本页目录">
             <span>本页内容</span>
             <a href="#overview">概览</a>
-            {sections.slice(0, 8).map((section) => (
+            {sections.map((section) => (
               <a href={`#${section.id}`} key={section.id}>
                 {section.title}
               </a>

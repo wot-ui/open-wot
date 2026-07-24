@@ -44,7 +44,8 @@ copyButton?.addEventListener('click', async () => {
     }, 1800)
   }
   catch {
-    toast.textContent = '复制失败，请手动选择'
+    if (toast)
+      toast.textContent = '复制失败，请手动选择'
     toast?.classList.add('is-visible')
     window.setTimeout(() => toast?.classList.remove('is-visible'), 2400)
   }
@@ -63,7 +64,8 @@ document.querySelectorAll('[data-doc-copy]').forEach((button) => {
       const original = label?.textContent
       if (label)
         label.textContent = '已复制'
-      toast.textContent = '快速开始命令已复制'
+      if (toast)
+        toast.textContent = '快速开始命令已复制'
       toast?.classList.add('is-visible')
 
       window.setTimeout(() => {
@@ -73,7 +75,8 @@ document.querySelectorAll('[data-doc-copy]').forEach((button) => {
       }, 1800)
     }
     catch {
-      toast.textContent = '复制失败，请手动选择'
+      if (toast)
+        toast.textContent = '复制失败，请手动选择'
       toast?.classList.add('is-visible')
       window.setTimeout(() => toast?.classList.remove('is-visible'), 2400)
     }
