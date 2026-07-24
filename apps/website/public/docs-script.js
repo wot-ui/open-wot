@@ -23,6 +23,7 @@ docsNavLinks.forEach((link) => {
   link.addEventListener('click', () => {
     docsSidebar?.classList.remove('is-open')
     docsMenu?.setAttribute('aria-expanded', 'false')
+    window.requestAnimationFrame(scheduleActiveSectionUpdate)
   })
 })
 
@@ -56,6 +57,8 @@ docsSearch?.addEventListener('input', () => {
 
   if (docsEmpty)
     docsEmpty.hidden = matches > 0
+
+  scheduleActiveSectionUpdate()
 })
 
 document.querySelectorAll('[data-copy-code]').forEach((button) => {
@@ -84,19 +87,39 @@ document.querySelectorAll('[data-copy-code]').forEach((button) => {
   })
 })
 
-const sectionObserver = new IntersectionObserver((entries) => {
-  const visible = entries
-    .filter(entry => entry.isIntersecting && !entry.target.hidden)
-    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-
-  if (!visible)
+const updateActiveSection = () => {
+  const visibleSections = docsSections.filter(section => !section.hidden)
+  if (!visibleSections.length)
     return
 
-  const hash = `#${visible.target.id}`
-  docsNavLinks.forEach(link => link.classList.toggle('is-active', link.getAttribute('href') === hash))
-}, {
-  rootMargin: '-18% 0px -70% 0px',
-  threshold: [0, 0.1, 0.25],
-})
+  const documentHeight = document.documentElement.scrollHeight
+  const viewportBottom = window.scrollY + window.innerHeight
+  const isAtPageBottom = viewportBottom >= documentHeight - 8
+  const readingLine = Math.max(120, window.innerHeight * 0.22)
+  const activeSection = isAtPageBottom
+    ? visibleSections[visibleSections.length - 1]
+    : [...visibleSections]
+        .reverse()
+        .find(section => section.getBoundingClientRect().top <= readingLine)
+      ?? visibleSections[0]
+  const hash = `#${activeSection.id}`
 
-docsSections.forEach(section => sectionObserver.observe(section))
+  docsNavLinks.forEach(link => link.classList.toggle('is-active', link.getAttribute('href') === hash))
+}
+
+let activeSectionUpdatePending = false
+
+function scheduleActiveSectionUpdate() {
+  if (activeSectionUpdatePending)
+    return
+
+  activeSectionUpdatePending = true
+  window.requestAnimationFrame(() => {
+    updateActiveSection()
+    activeSectionUpdatePending = false
+  })
+}
+
+scheduleActiveSectionUpdate()
+window.addEventListener('scroll', scheduleActiveSectionUpdate, { passive: true })
+window.addEventListener('resize', scheduleActiveSectionUpdate)

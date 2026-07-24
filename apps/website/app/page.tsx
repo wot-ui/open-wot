@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import landingDocument from "../index.html?raw";
+import packageJson from "../../../package.json";
+import landingDocument from "../landing.html?raw";
 
 const bodyMarkup =
   landingDocument
+    .replaceAll("__OPEN_WOT_VERSION_DISPLAY__", packageJson.version.toUpperCase())
+    .replaceAll("__OPEN_WOT_VERSION__", packageJson.version)
     .match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1]
     ?.replace(/<script src="\.\/script\.js"><\/script>/i, "") ?? "";
 
