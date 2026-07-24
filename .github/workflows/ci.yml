@@ -85,3 +85,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm site:lint
       - run: pnpm site:build
+      - run: pnpm site:build:next

@@ -38,6 +38,7 @@
     "dev": "tsdown --watch",
     "site:dev": "pnpm --filter @open-wot/website dev",
     "site:build": "pnpm --filter @open-wot/website build",
+    "site:build:next": "pnpm --filter @open-wot/website build:next",
     "site:lint": "pnpm --filter @open-wot/website lint",
     "extract": "tsx scripts/extract.ts",
     "extract:clone": "rm -rf /tmp/open-wot-wot-ui && git clone --depth 1 https://github.com/wot-ui/wot-ui.git /tmp/open-wot-wot-ui && pnpm extract --wot-dir /tmp/open-wot-wot-ui --output data/v2.json",

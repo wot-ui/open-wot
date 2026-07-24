@@ -78,16 +78,19 @@ pnpm test:coverage
 pnpm site:dev
 pnpm site:lint
 pnpm site:build
+pnpm site:build:next
 ```
 
 根目录 `README.md` 是 CLI 用户文档的唯一内容源。官网 `/docs` 会在构建时直接读取 README，生成章节导航、搜索内容、表格和代码块，因此不要在官网子包中复制一份手写文档。
+
+`site:build` 生成 Vinext / Cloudflare Worker 产物；`site:build:next` 生成标准 `.next` 产物，可用于支持 Next.js 的托管平台。
 
 CLI 命令、参数、MCP tools 或接入流程变化时：
 
 1. 更新实现和对应测试。
 2. 同步修改根目录 `README.md`。
 3. 运行 CLI 的定向测试与真实命令。
-4. 运行 `pnpm site:lint && pnpm site:build`，确认同一份 Markdown 可以生成官网文档。
+4. 运行 `pnpm site:lint && pnpm site:build && pnpm site:build:next`，确认同一份 Markdown 可以生成两种官网产物。
 
 CI 的 Website job 会执行官网 lint 与 build；README 中存在无法渲染的内容时，官网构建会直接失败。
 
