@@ -31,6 +31,7 @@ describe('utils/scanner', () => {
     vi.mocked(listComponents).mockReturnValue([
       { name: 'Button', tag: 'wd-button' },
       { name: 'Cell', tag: 'wd-cell' },
+      { name: 'Tab', tag: 'wd-tabs' },
     ] as any)
 
     vi.mocked(findComponent).mockImplementation((name) => {
@@ -68,6 +69,26 @@ import { useToast } from '@wot-ui/ui'
     expect(report.imports).toContain('@wot-ui/ui')
   })
 
+  it('attributes compound tags to their parent metadata while preserving the actual tag', () => {
+    const dir = createTempDir('open-wot-scanner-compound-usage-')
+    writeFileSync(join(dir, 'tabs.vue'), `
+<template>
+  <wd-tabs>
+    <wd-tab title="First" />
+    <wd-tab title="Second" />
+  </wd-tabs>
+</template>
+`)
+
+    const report = analyzeUsage(dir, '2.1.0')
+    const tabs = report.components.find(item => item.tag === 'wd-tabs')
+    const tab = report.components.find(item => item.tag === 'wd-tab')
+
+    expect(tabs).toMatchObject({ name: 'Tab', count: 1 })
+    expect(tab).toMatchObject({ name: 'Tab', count: 2 })
+    expect(listComponents).toHaveBeenCalledWith('2.1.0')
+  })
+
   it('lints unknown tags, empty button content and deprecated props', () => {
     const dir = createTempDir('open-wot-scanner-lint-')
     writeFileSync(join(dir, 'lint.vue'), `
@@ -85,5 +106,27 @@ import { useToast } from '@wot-ui/ui'
     expect(rules).toContain('unknown-component')
     expect(rules).toContain('deprecated-prop')
     expect(rules).toContain('button-content')
+  })
+
+  it('accepts compound tags, reports real unknown tags, and forwards the version', () => {
+    const dir = createTempDir('open-wot-scanner-compound-lint-')
+    writeFileSync(join(dir, 'lint.vue'), `
+<template>
+  <wd-tabs>
+    <wd-tab title="First" />
+  </wd-tabs>
+  <wd-does-not-exist />
+</template>
+`)
+
+    const report = lintProject(dir, '2.1.0')
+
+    expect(report.issues).toEqual([
+      expect.objectContaining({
+        rule: 'unknown-component',
+        message: 'Unknown wot-ui component tag: wd-does-not-exist',
+      }),
+    ])
+    expect(listComponents).toHaveBeenCalledWith('2.1.0')
   })
 })

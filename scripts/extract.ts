@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 
 import { basename, dirname, join, resolve } from 'node:path'
 import process from 'node:process'
+import { COMPONENT_TAG_MAP } from '../src/data/component-tags'
 
 interface CliArgs {
   wotDir?: string
@@ -12,20 +13,6 @@ interface CliArgs {
 interface HeadingMatch {
   title: string
   body: string
-}
-
-const COMPONENT_MAP: Record<string, string[]> = {
-  'table': ['wd-table', 'wd-table-column'],
-  'radio': ['wd-radio', 'wd-radio-group'],
-  'checkbox': ['wd-checkbox', 'wd-checkbox-group'],
-  'collapse': ['wd-collapse', 'wd-collapse-item'],
-  'swipe-action': ['wd-swipe-action', 'wd-swipe-action-item'],
-  'grid': ['wd-grid', 'wd-grid-item'],
-  'tabs': ['wd-tabs', 'wd-tab'],
-  'steps': ['wd-steps', 'wd-step'],
-  'sidebar': ['wd-sidebar', 'wd-sidebar-item'],
-  'index-bar': ['wd-index-bar', 'wd-index-anchor'],
-  'form': ['wd-form', 'wd-form-item'],
 }
 
 function logStep(icon: string, message: string): void {
@@ -165,7 +152,7 @@ function parseScssVariables(scssContent: string): CssVarMeta[] {
 
 function extractCssVarsFromScss(wotDir: string, componentDocPath: string): CssVarMeta[] {
   const componentId = basename(componentDocPath, '.md')
-  const targetComponents = COMPONENT_MAP[componentId] || [`wd-${componentId}`]
+  const targetComponents = COMPONENT_TAG_MAP[componentId] || [`wd-${componentId}`]
   const variables: CssVarMeta[] = []
 
   for (const componentName of targetComponents) {
