@@ -22,11 +22,11 @@ export const COMPONENT_TAG_MAP: Readonly<Record<string, readonly string[]>> = {
   'tabs': ['wd-tabs', 'wd-tab'],
 }
 
-function getComponentId(tag: string): string {
-  return tag.toLowerCase().replace(/^wd-/, '')
-}
-
 export function getComponentTags(component: ComponentMeta): string[] {
   const tag = component.tag.toLowerCase()
-  return [...new Set([tag, ...(COMPONENT_TAG_MAP[getComponentId(tag)] ?? [])])]
+  const componentId = tag.replace(/^wd-/, '')
+  const mappedTags = COMPONENT_TAG_MAP[componentId]
+    ?? Object.entries(COMPONENT_TAG_MAP).find(([id, tags]) => id === componentId || tags.includes(tag))?.[1]
+    ?? []
+  return [...new Set([tag, ...mappedTags])]
 }

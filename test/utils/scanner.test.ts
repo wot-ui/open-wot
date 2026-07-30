@@ -32,6 +32,7 @@ describe('utils/scanner', () => {
       { name: 'Button', tag: 'wd-button' },
       { name: 'Cell', tag: 'wd-cell' },
       { name: 'Tab', tag: 'wd-tabs' },
+      { name: 'Layout', tag: 'wd-layout' },
     ] as any)
 
     vi.mocked(findComponent).mockImplementation((name) => {
@@ -128,5 +129,18 @@ import { useToast } from '@wot-ui/ui'
       }),
     ])
     expect(listComponents).toHaveBeenCalledWith('2.1.0')
+  })
+
+  it('recognizes compound tags whose primary metadata tag differs from their rendered tags', () => {
+    const dir = createTempDir('open-wot-scanner-layout-lint-')
+    writeFileSync(join(dir, 'layout.vue'), `
+<template>
+  <wd-row>
+    <wd-col :span="12" />
+  </wd-row>
+</template>
+`)
+
+    expect(lintProject(dir, '2.1.0').issues).toEqual([])
   })
 })
