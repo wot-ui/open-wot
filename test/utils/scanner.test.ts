@@ -12,6 +12,12 @@ vi.mock('../../src/data/metadata', () => ({
 
 const tempDirs: string[] = []
 
+const compoundComponentCases = [
+  { name: 'Tab', parentTag: 'wd-tabs', childTag: 'wd-tab' },
+  { name: 'Grid', parentTag: 'wd-grid', childTag: 'wd-grid-item' },
+  { name: 'Tabbar', parentTag: 'wd-tabbar', childTag: 'wd-tabbar-item' },
+] as const
+
 function createTempDir(prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix))
   tempDirs.push(dir)
@@ -32,6 +38,8 @@ describe('utils/scanner', () => {
       { name: 'Button', tag: 'wd-button' },
       { name: 'Cell', tag: 'wd-cell' },
       { name: 'Tab', tag: 'wd-tabs' },
+      { name: 'Grid', tag: 'wd-grid' },
+      { name: 'Tabbar', tag: 'wd-tabbar' },
       { name: 'Layout', tag: 'wd-layout' },
     ] as any)
 
@@ -70,23 +78,23 @@ import { useToast } from '@wot-ui/ui'
     expect(report.imports).toContain('@wot-ui/ui')
   })
 
-  it('attributes compound tags to their parent metadata while preserving the actual tag', () => {
+  it.each(compoundComponentCases)('attributes $childTag to its parent metadata while preserving the actual tag', ({ name, parentTag, childTag }) => {
     const dir = createTempDir('open-wot-scanner-compound-usage-')
-    writeFileSync(join(dir, 'tabs.vue'), `
+    writeFileSync(join(dir, 'compound.vue'), `
 <template>
-  <wd-tabs>
-    <wd-tab title="First" />
-    <wd-tab title="Second" />
-  </wd-tabs>
+  <${parentTag}>
+    <${childTag} />
+    <${childTag} />
+  </${parentTag}>
 </template>
 `)
 
     const report = analyzeUsage(dir, '2.1.0')
-    const tabs = report.components.find(item => item.tag === 'wd-tabs')
-    const tab = report.components.find(item => item.tag === 'wd-tab')
+    const parent = report.components.find(item => item.tag === parentTag)
+    const child = report.components.find(item => item.tag === childTag)
 
-    expect(tabs).toMatchObject({ name: 'Tab', count: 1 })
-    expect(tab).toMatchObject({ name: 'Tab', count: 2 })
+    expect(parent).toMatchObject({ name, tag: parentTag, count: 1 })
+    expect(child).toMatchObject({ name, tag: childTag, count: 2 })
     expect(listComponents).toHaveBeenCalledWith('2.1.0')
   })
 
@@ -109,13 +117,13 @@ import { useToast } from '@wot-ui/ui'
     expect(rules).toContain('button-content')
   })
 
-  it('accepts compound tags, reports real unknown tags, and forwards the version', () => {
+  it.each(compoundComponentCases)('accepts $childTag, reports real unknown tags, and forwards the version', ({ parentTag, childTag }) => {
     const dir = createTempDir('open-wot-scanner-compound-lint-')
     writeFileSync(join(dir, 'lint.vue'), `
 <template>
-  <wd-tabs>
-    <wd-tab title="First" />
-  </wd-tabs>
+  <${parentTag}>
+    <${childTag} />
+  </${parentTag}>
   <wd-does-not-exist />
 </template>
 `)
