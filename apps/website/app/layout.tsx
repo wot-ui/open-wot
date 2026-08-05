@@ -27,8 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
-        <Script id="baidu-analytics" strategy="beforeInteractive">
-          {`
+        <script
+          id="baidu-analytics"
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
             var _hmt = _hmt || [];
             (function() {
               var hm = document.createElement("script");
@@ -36,8 +39,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               var s = document.getElementsByTagName("script")[0];
               s.parentNode.insertBefore(hm, s);
             })();
-          `}
-        </Script>
+          `,
+          }}
+        />
       </head>
       <body>
         <Script src="/theme.js" strategy="beforeInteractive" />
