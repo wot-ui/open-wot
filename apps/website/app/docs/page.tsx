@@ -25,9 +25,7 @@ export default function Docs() {
         <header className="docs-topbar" data-header>
           <div className="docs-topbar-inner">
             <a className="brand cursor-pointer" href="/" aria-label="返回 Open Wot 首页">
-              <span className="brand-mark" aria-hidden="true">
-                <span>&gt;</span>_
-              </span>
+              <img className="brand-mark" src="/favicon.svg" alt="" aria-hidden="true" />
               <span>OPEN_WOT</span>
             </a>
             <div className="docs-breadcrumb">

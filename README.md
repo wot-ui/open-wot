@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://wot-ui.cn">
-    <img src="./docs/assets/wot-ui-logo.svg" width="112" alt="Wot UI">
+  <a href="https://cli.wot-ui.cn">
+    <img src="https://cli.wot-ui.cn/favicon.svg" width="96" alt="Open Wot">
   </a>
 </p>
 
