@@ -11,6 +11,39 @@ const setHeaderState = () => {
 setHeaderState()
 window.addEventListener('scroll', setHeaderState, { passive: true })
 
+document.addEventListener('click', (event) => {
+  if (
+    event.defaultPrevented
+    || event.button !== 0
+    || event.metaKey
+    || event.ctrlKey
+    || event.shiftKey
+    || event.altKey
+    || !(event.target instanceof Element)
+  )
+    return
+
+  const link = event.target.closest('a[href^="#"]')
+  const hash = link?.getAttribute('href')
+  if (!hash || hash === '#')
+    return
+
+  let target
+  try {
+    target = document.querySelector(hash)
+  }
+  catch {
+    return
+  }
+
+  if (!target)
+    return
+
+  event.preventDefault()
+  window.history.pushState(null, '', hash)
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}, { capture: true })
+
 navToggle?.addEventListener('click', () => {
   const isOpen = navPanel?.classList.toggle('is-open') ?? false
   navToggle.setAttribute('aria-expanded', String(isOpen))
