@@ -26,9 +26,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body>
-        <Script src="/theme.js" strategy="beforeInteractive" />
-        <Script id="baidu-analytics" strategy="afterInteractive">
+      <head>
+        <Script id="baidu-analytics" strategy="beforeInteractive">
           {`
             var _hmt = _hmt || [];
             (function() {
@@ -39,6 +38,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             })();
           `}
         </Script>
+      </head>
+      <body>
+        <Script src="/theme.js" strategy="beforeInteractive" />
         {children}
       </body>
     </html>
