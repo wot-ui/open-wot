@@ -49,22 +49,38 @@ export default function Docs() {
               />
               <kbd>/</kbd>
             </label>
-            <label
-              className="theme-picker theme-picker-compact cursor-pointer"
-              title="选择主题色"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m14.5 4.5 5 5M13 6l5 5M4 20l4.2-1.1L19 8.1a2.1 2.1 0 0 0-3-3L5.1 16 4 20Z" />
-                <path d="M12 18h8" />
-              </svg>
-              <i className="theme-picker-swatch" aria-hidden="true" />
-              <input
-                type="color"
-                defaultValue="#39d353"
-                aria-label="选择网站主题色"
-                data-theme-picker
-              />
-            </label>
+            <div className="theme-controls">
+              <label
+                className="theme-picker theme-picker-compact cursor-pointer"
+                title="选择主题色"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14.5 4.5 5 5M13 6l5 5M4 20l4.2-1.1L19 8.1a2.1 2.1 0 0 0-3-3L5.1 16 4 20Z" />
+                  <path d="M12 18h8" />
+                </svg>
+                <i className="theme-picker-swatch" aria-hidden="true" />
+                <input
+                  type="color"
+                  defaultValue="#39d353"
+                  aria-label="选择网站主题色"
+                  data-theme-picker
+                />
+              </label>
+              <button
+                className="theme-reset cursor-pointer"
+                type="button"
+                title="恢复默认主题色"
+                aria-label="恢复默认主题色"
+                data-theme-reset
+                disabled
+                suppressHydrationWarning
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 8v5h5" />
+                  <path d="M5.6 17a8 8 0 1 0 .3-10.3L4 8" />
+                </svg>
+              </button>
+            </div>
             <a
               className="docs-github cursor-pointer"
               href="https://github.com/wot-ui/open-wot"

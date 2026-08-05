@@ -43,6 +43,9 @@
     document.querySelectorAll('[data-theme-value]').forEach((output) => {
       output.textContent = normalized.toUpperCase()
     })
+    document.querySelectorAll('[data-theme-reset]').forEach((button) => {
+      button.disabled = normalized === defaultAccent
+    })
 
     if (persist) {
       try {
@@ -57,10 +60,23 @@
   const initialAccent = readSavedAccent()
   applyAccent(initialAccent)
 
+  const resetAccent = () => {
+    try {
+      window.localStorage.removeItem(storageKey)
+    }
+    catch {
+      // Reset still works for the current page when storage is unavailable.
+    }
+    applyAccent(defaultAccent)
+  }
+
   const bindPickers = () => {
     applyAccent(initialAccent)
     document.querySelectorAll('[data-theme-picker]').forEach((picker) => {
       picker.addEventListener('input', event => applyAccent(event.target.value, true))
+    })
+    document.querySelectorAll('[data-theme-reset]').forEach((button) => {
+      button.addEventListener('click', resetAccent)
     })
   }
 
