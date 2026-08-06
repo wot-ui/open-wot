@@ -122,15 +122,16 @@ describe('mcp client adapters', () => {
     const cwd = await temporaryDirectory()
     const homeDir = await temporaryDirectory()
     const bin = await temporaryDirectory()
-    const executable = join(bin, 'agy-ide')
+    const executable = join(bin, process.platform === 'win32' ? 'agy-ide.CMD' : 'agy-ide')
     await writeFile(executable, '')
-    await chmod(executable, 0o755)
+    if (process.platform !== 'win32')
+      await chmod(executable, 0o755)
 
     await expect(antigravityAdapter.detect({
       cwd,
       homeDir,
       env: { PATH: bin },
-      platform: 'linux',
+      platform: process.platform,
     })).resolves.toMatchObject({
       installed: true,
       executable,
@@ -194,6 +195,22 @@ describe('mcp client adapters', () => {
       matches: false,
       problem: expect.stringContaining('not an enabled OpenCode local MCP server'),
     })
+  })
+
+  it('uses XDG_CONFIG_HOME for the OpenCode user config', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const configHome = await temporaryDirectory()
+    const userContext = {
+      ...context(cwd, homeDir, 'user'),
+      env: { PATH: '', XDG_CONFIG_HOME: configHome },
+    }
+    const path = join(configHome, 'opencode', 'opencode.json')
+
+    const install = await opencodeAdapter.planInstall(userContext)
+    expect(install.changes[0]?.path).toBe(path)
+    await applyChangePlan(install)
+    await expect(opencodeAdapter.inspect(userContext)).resolves.toMatchObject({ path, matches: true })
   })
 
   it('manages an existing OpenCode config under the .opencode directory', async () => {
@@ -322,6 +339,30 @@ describe('mcp client adapters', () => {
     await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({
       path: nestedPath,
       matches: true,
+    })
+  })
+
+  it('ignores inherited OpenCode server fields from unsafe JSON keys', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const path = join(cwd, 'opencode.json')
+    await writeFile(path, `{
+  "mcp": {
+    "wot-ui": {
+      "__proto__": {
+        "type": "local",
+        "command": ["npx", "-y", "@wot-ui/cli", "mcp"],
+        "enabled": true
+      }
+    }
+  }
+}
+`)
+
+    await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({
+      configured: true,
+      matches: false,
+      problem: expect.stringContaining('not an enabled OpenCode local MCP server'),
     })
   })
 

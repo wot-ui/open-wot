@@ -2,6 +2,7 @@ import type { ParseError } from 'jsonc-parser'
 import type { ChangePlan, ClientConfigState, ClientDetection, ClientRegistrationState, DetectContext, McpClientAdapter, McpScope, McpServerDefinition, PlanContext, PlannedFileChange, RegistrationCheckOptions } from './types'
 import { access, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import process from 'node:process'
 import { applyEdits, modify, parse, printParseErrorCode } from 'jsonc-parser'
 import { clientCommandOutput, runClientCommand } from './client-command'
 import { findExecutable } from './detect'
@@ -20,6 +21,16 @@ interface OpenCodeConfigSource {
   config: Record<string, unknown>
   serverEntry: unknown
   hasServerEntry: boolean
+}
+
+function userConfigRoot(context: DetectContext): string {
+  const env = context.env ?? process.env
+  return resolve(env.XDG_CONFIG_HOME || join(context.homeDir, '.config'))
+}
+
+function userConfigAllowedRoot(context: DetectContext): string {
+  const env = context.env ?? process.env
+  return env.XDG_CONFIG_HOME ? userConfigRoot(context) : context.homeDir
 }
 
 async function readOptional(path: string): Promise<string | undefined> {
@@ -42,7 +53,7 @@ function configCandidates(context: DetectContext, scope: McpScope): string[] {
       resolve(context.cwd, '.opencode', 'opencode.jsonc'),
     ]
   }
-  const directory = join(context.homeDir, '.config', 'opencode')
+  const directory = join(userConfigRoot(context), 'opencode')
   return [resolve(directory, 'opencode.json'), resolve(directory, 'opencode.jsonc')]
 }
 
@@ -95,11 +106,24 @@ function selectConfigSource(sources: OpenCodeConfigSource[]): OpenCodeConfigSour
 }
 
 function mergeDeepValue(target: unknown, source: unknown): unknown {
-  if (!isRecord(target) || !isRecord(source))
+  if (Array.isArray(source))
+    return source.map(value => mergeDeepValue(undefined, value))
+  if (!isRecord(source))
     return source
-  const merged: Record<string, unknown> = { ...target }
-  for (const [key, value] of Object.entries(source))
-    merged[key] = key in merged ? mergeDeepValue(merged[key], value) : value
+
+  const merged: Record<string, unknown> = {}
+  if (isRecord(target)) {
+    for (const [key, value] of Object.entries(target)) {
+      if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype')
+        merged[key] = mergeDeepValue(undefined, value)
+    }
+  }
+  for (const [key, value] of Object.entries(source)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype')
+      continue
+    const hasExistingValue = Object.prototype.hasOwnProperty.call(merged, key)
+    merged[key] = mergeDeepValue(hasExistingValue ? merged[key] : undefined, value)
+  }
   return merged
 }
 
@@ -294,7 +318,7 @@ export const opencodeAdapter: McpClientAdapter = {
         : [{
             type: 'write-file',
             path,
-            allowedRoot: context.scope === 'project' ? context.cwd : context.homeDir,
+            allowedRoot: context.scope === 'project' ? context.cwd : userConfigAllowedRoot(context),
             before,
             after,
             reason: 'Add or update mcp.wot-ui as an OpenCode local server',
@@ -322,7 +346,7 @@ export const opencodeAdapter: McpClientAdapter = {
       return [{
         type: 'write-file',
         path: source.path,
-        allowedRoot: context.scope === 'project' ? context.cwd : context.homeDir,
+        allowedRoot: context.scope === 'project' ? context.cwd : userConfigAllowedRoot(context),
         before: source.content,
         after,
         reason: 'Remove only the wot-ui OpenCode MCP server entry',
