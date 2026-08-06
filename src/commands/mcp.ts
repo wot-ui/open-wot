@@ -4,7 +4,7 @@ import process from 'node:process'
 import { applyChangePlan, confirmChangePlan, formatChangePlan, mergeChangePlans, toPublicChangePlan } from '../application/change-plan'
 import { doctorMcpClients, formatMcpDoctorReport, mcpDoctorExitCode, toPublicMcpDoctorReport } from '../application/mcp-doctor'
 import { detectMcpClients, inspectMcpClients, planMcpInstall, planMcpRemove, printMcpConfig, toPublicClientConfigState } from '../application/mcp-onboarding'
-import { isMcpClientId, isMcpScope } from '../mcp/clients'
+import { isMcpClientId, isMcpScope, MCP_CLIENT_IDS } from '../mcp/clients'
 import { writeJson, writeLine } from '../utils/output'
 import { parsePositiveIntegerOption, printError } from './shared'
 
@@ -20,6 +20,8 @@ interface McpCommandOptions {
   pin?: string | boolean
 }
 
+const mcpClientChoices = ['auto', 'all', ...MCP_CLIENT_IDS].join(', ')
+
 function outputFormat(value?: string): OutputFormat {
   return value === 'json' ? 'json' : 'text'
 }
@@ -28,7 +30,7 @@ function parseClient(value: string | undefined, fallback: 'auto' | 'all' = 'auto
   const client = value ?? fallback
   if (client === 'auto' || client === 'all' || isMcpClientId(client))
     return client
-  throw new Error(`Unsupported MCP client "${client}". Use claude, cursor, vscode, codex, opencode, antigravity, auto, or all.`)
+  throw new Error(`Unsupported MCP client "${client}". Use ${mcpClientChoices}.`)
 }
 
 function parseScope(value?: string): McpScope {
@@ -40,7 +42,7 @@ function parseScope(value?: string): McpScope {
 
 function addCommonOptions(command: Command, defaultClient: 'auto' | 'all' = 'auto'): Command {
   return command
-    .option('--client <client>', 'MCP client: auto, all, claude, cursor, vscode, codex, opencode, antigravity', defaultClient)
+    .option('--client <client>', `MCP client: ${mcpClientChoices}`, defaultClient)
     .option('--scope <scope>', 'configuration scope: project or user', 'project')
     .option('--cwd <directory>', 'project directory', process.cwd())
     .option('--format <format>', 'output format: text or json', 'text')

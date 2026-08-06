@@ -70,6 +70,7 @@ describe('agent onboarding', () => {
 
     await applyChangePlan(await planAgentRemove({ ...options, capabilities: [...options.capabilities] }))
     expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).not.toContain('open-wot agent instructions start')
+    expect(await inspectAgentFiles(cwd, 'antigravity')).toEqual({ skillInstalled: false, skillMatches: false, instructionsInstalled: false })
   })
 
   it('removes only the exact managed range without normalizing user whitespace', () => {
