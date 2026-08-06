@@ -11,6 +11,7 @@ interface JsonAdapterOptions {
   supportedScopes: McpScope[]
   configPath: (context: DetectContext, scope: McpScope) => string
   serverKey: 'mcpServers' | 'servers'
+  serverProblem?: (entry: unknown) => string | undefined
   verifyRegistration?: (context: PlanContext, state: ClientConfigState, options?: RegistrationCheckOptions) => Promise<ClientRegistrationState>
 }
 
@@ -135,6 +136,7 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
         ? (servers as Record<string, unknown>)['wot-ui']
         : undefined
       const server = isServerDefinition(entry) ? entry : undefined
+      const serverProblem = server ? this.options.serverProblem?.(entry) : undefined
       return {
         client: this.id,
         displayName: this.displayName,
@@ -142,9 +144,13 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
         path,
         exists: true,
         configured: entry !== undefined,
-        matches: serverMatches(server, context.server),
+        matches: !serverProblem && serverMatches(server, context.server),
         ...(server ? { server } : {}),
-        ...(!server && entry !== undefined ? { problem: 'The wot-ui entry is not a supported stdio server definition' } : {}),
+        ...(serverProblem
+          ? { problem: serverProblem }
+          : !server && entry !== undefined
+              ? { problem: 'The wot-ui entry is not a supported stdio server definition' }
+              : {}),
       }
     }
     catch (error) {

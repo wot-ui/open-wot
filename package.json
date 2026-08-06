@@ -5,14 +5,23 @@
   "packageManager": "pnpm@10.25.0",
   "description": "面向 wot-ui 的 CLI、MCP 与数据提取工具集",
   "license": "MIT",
-  "funding": "https://github.com/sponsors/antfu",
+  "funding": "https://github.com/Moonofweisheng/sponsors",
   "homepage": "https://github.com/wot-ui/open-wot#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wot-ui/open-wot.git"
   },
   "bugs": "https://github.com/wot-ui/open-wot/issues",
-  "keywords": [],
+  "keywords": [
+    "wot-ui",
+    "uni-app",
+    "vue",
+    "cli",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent"
+  ],
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
@@ -76,13 +85,10 @@
     "lint-staged": "catalog:cli",
     "publint": "catalog:cli",
     "simple-git-hooks": "catalog:cli",
-    "tinyexec": "catalog:testing",
     "tsdown": "catalog:cli",
     "tsx": "catalog:cli",
     "typescript": "catalog:cli",
-    "vitest": "catalog:testing",
-    "vitest-package-exports": "catalog:testing",
-    "yaml": "catalog:testing"
+    "vitest": "catalog:testing"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm i --frozen-lockfile --ignore-scripts --offline && npx lint-staged"

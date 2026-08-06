@@ -59,7 +59,7 @@ function parseClient(value?: string): McpClientId | 'auto' | 'all' {
 
 function addOptions(command: Command, defaultClient: 'auto' | 'all' = 'auto'): Command {
   return command
-    .option('--client <client>', 'Agent client: auto, all, claude, cursor, vscode, codex', defaultClient)
+    .option('--client <client>', 'Agent client: auto, all, claude, cursor, vscode, codex, opencode, antigravity', defaultClient)
     .option('--scope <scope>', 'MCP configuration scope: project or user', 'project')
     .option('--with <capabilities>', 'capabilities: mcp,skill,instructions', 'mcp,skill,instructions')
     .option('--cwd <directory>', 'project directory', process.cwd())

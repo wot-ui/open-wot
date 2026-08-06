@@ -52,6 +52,26 @@ describe('agent onboarding', () => {
     expect(await readFile(path, 'utf8')).toBe(content)
   })
 
+  it('uses and removes Antigravity project Skill and shared AGENTS.md instructions', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-agent-antigravity-'))
+    directories.push(cwd)
+    const options = {
+      client: 'antigravity' as const,
+      capabilities: ['skill', 'instructions'] as const,
+      cwd,
+      homeDir: cwd,
+      scope: 'project' as const,
+    }
+
+    await applyChangePlan(await planAgentInit({ ...options, capabilities: [...options.capabilities] }))
+    expect(await readFile(join(cwd, '.agents', 'skills', 'wot-ui-v2', 'SKILL.md'), 'utf8')).toContain('wot-ui-v2')
+    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).toContain('open-wot agent instructions start')
+    expect(await inspectAgentFiles(cwd, 'antigravity')).toEqual({ skillInstalled: true, skillMatches: true, instructionsInstalled: true })
+
+    await applyChangePlan(await planAgentRemove({ ...options, capabilities: [...options.capabilities] }))
+    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).not.toContain('open-wot agent instructions start')
+  })
+
   it('removes only the exact managed range without normalizing user whitespace', () => {
     const block = createAgentInstructions('cursor')
     const content = `first\n\n\nsecond\n\n${block}\n\n\ntail\n`

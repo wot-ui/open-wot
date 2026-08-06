@@ -57,9 +57,9 @@ Instructions     AI 在生成代码前主动查询真实组件知识
 
 使用其他客户端时，只需替换 client id：
 
-| Claude Code | Cursor | VS Code | Codex |
-| --- | --- | --- | --- |
-| `claude` | `cursor` | `vscode` | `codex` |
+| Claude Code | Cursor | VS Code | Codex | OpenCode | Antigravity |
+| --- | --- | --- | --- | --- | --- |
+| `claude` | `cursor` | `vscode` | `codex` | `opencode` | `antigravity` |
 
 同时使用多个 AI 客户端时，可以一次完成全部项目级配置：
 
@@ -68,7 +68,7 @@ wot agent init --client all
 wot agent doctor --client all --timeout 30000
 ```
 
-`--client all` 在 project scope 下会处理 Claude Code、Cursor、VS Code 和 Codex；在 user scope 下只处理支持用户级配置的客户端。
+`--client all` 在 project scope 下会处理 Claude Code、Cursor、VS Code、Codex、OpenCode 和 Antigravity；在 user scope 下只处理支持用户级配置的客户端。
 
 配置完成后重启客户端；如果出现“信任项目”或“批准 MCP Server”的提示，请按客户端指引确认。
 
@@ -82,7 +82,7 @@ flowchart LR
   B --> C["CLI"]
   B --> D["MCP · 8 tools"]
   B --> E["Skills + Instructions"]
-  D --> F["Cursor · Claude Code · VS Code · Codex"]
+  D --> F["Cursor · Claude Code · VS Code · Codex · OpenCode · Antigravity"]
   E --> F
 ```
 
@@ -159,7 +159,7 @@ wot agent init --client claude --with skill,instructions
 
 1. 确认 Node.js >= 20。
 2. 安装或更新 `@wot-ui/cli@latest`；优先全局安装，不要使用 sudo。权限受限时改用 `npx -y @wot-ui/cli@latest` 执行后续命令。
-3. 识别当前客户端：Claude Code=claude、Cursor=cursor、VS Code=vscode、Codex=codex。无法确定时先询问我。
+3. 识别当前客户端：Claude Code=claude、Cursor=cursor、VS Code=vscode、Codex=codex、OpenCode=opencode、Antigravity=antigravity。无法确定时先询问我。
 4. 执行 `wot agent init --client <client-id> --scope project --with mcp,skill,instructions --yes`。
 5. 执行 `wot agent doctor --client <client-id> --scope project --with mcp,skill,instructions`。
 6. 告诉我修改了哪些文件、doctor 结果，以及是否需要重启客户端或批准 MCP。
@@ -241,6 +241,8 @@ wot mcp remove --client cursor
 | Cursor | `.cursor/mcp.json` | `mcpServers` |
 | VS Code | `.vscode/mcp.json` | `servers` |
 | Codex | `.codex/config.toml` | `mcp_servers.wot-ui` |
+| OpenCode | `opencode.json[c]` / `.opencode/opencode.json[c]` | `mcp.wot-ui` |
+| Antigravity | `.agents/mcp_config.json` | `mcpServers` |
 
 ```bash
 wot mcp print --client cursor             # 只预览配置
@@ -249,7 +251,9 @@ wot mcp init --client all                 # 配置所有客户端
 wot mcp init --client codex --pin         # 固定当前 CLI 版本
 ```
 
-Claude Code、Cursor 和 Codex 支持 `--scope user`；VS Code 当前使用 project scope。`doctor` 会验证配置和真实 MCP handshake，并在客户端支持时继续检查注册状态。
+Claude Code、Cursor、Codex、OpenCode 和 Antigravity 支持 `--scope user`；VS Code 当前使用 project scope。OpenCode 会按配置优先级复用项目中已有的 `opencode.json[c]` 或 `.opencode/opencode.json[c]`，用户配置写入 `~/.config/opencode/opencode.json`；Antigravity 写入 `~/.gemini/config/mcp_config.json`。`doctor` 会验证配置和真实 MCP handshake，并在客户端支持时继续检查注册状态；Antigravity 没有稳定的非交互式状态命令，因此会提示在客户端内执行 `/mcp` 确认。
+
+Agent 接入时，OpenCode 和 Antigravity 都复用 `.agents/skills/wot-ui-v2` 与项目根目录的 `AGENTS.md`；Antigravity 1.20.5 及以上版本会读取其中的项目规则。
 
 直接启动 stdio Server：
 
@@ -338,7 +342,7 @@ wot mcp serve                            # 语义明确的等价写法
 
 `init`、`status`、`doctor` 和 `remove` 支持：
 
-- `--client auto|all|claude|cursor|vscode|codex`
+- `--client auto|all|claude|cursor|vscode|codex|opencode|antigravity`
 - `--scope project|user`
 - `--with mcp,skill,instructions`
 - `--cwd <directory>`

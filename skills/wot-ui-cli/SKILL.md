@@ -100,7 +100,7 @@ npm pack --dry-run --json
 
 - `wot mcp` 使用 stdio，终端无普通输出通常正常。
 - `doctor` 验证配置和真实 handshake；部分客户端还会检查注册状态。
-- `--client all` 在 project scope 处理四个支持客户端。
+- `--client all` 在 project scope 处理六个支持客户端。
 - 保留已有 Server、JSONC 注释、非托管 TOML 和用户 Instructions。
 
 ## 参考

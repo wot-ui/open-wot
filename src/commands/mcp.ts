@@ -28,7 +28,7 @@ function parseClient(value: string | undefined, fallback: 'auto' | 'all' = 'auto
   const client = value ?? fallback
   if (client === 'auto' || client === 'all' || isMcpClientId(client))
     return client
-  throw new Error(`Unsupported MCP client "${client}". Use claude, cursor, vscode, codex, auto, or all.`)
+  throw new Error(`Unsupported MCP client "${client}". Use claude, cursor, vscode, codex, opencode, antigravity, auto, or all.`)
 }
 
 function parseScope(value?: string): McpScope {
@@ -40,7 +40,7 @@ function parseScope(value?: string): McpScope {
 
 function addCommonOptions(command: Command, defaultClient: 'auto' | 'all' = 'auto'): Command {
   return command
-    .option('--client <client>', 'MCP client: auto, all, claude, cursor, vscode, codex', defaultClient)
+    .option('--client <client>', 'MCP client: auto, all, claude, cursor, vscode, codex, opencode, antigravity', defaultClient)
     .option('--scope <scope>', 'configuration scope: project or user', 'project')
     .option('--cwd <directory>', 'project directory', process.cwd())
     .option('--format <format>', 'output format: text or json', 'text')
