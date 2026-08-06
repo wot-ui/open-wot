@@ -1,0 +1,78 @@
+name: 向 open-wot 提出功能需求
+description: 创建一个 Issue 描述 CLI、MCP、Agent 接入、离线数据或官网的新需求。
+title: '[需求] 请在此填写标题'
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先：
+
+        - 阅读 [README](https://github.com/wot-ui/open-wot#readme)，确认现有能力无法满足该场景。
+        - 在 [Issues](https://github.com/wot-ui/open-wot/issues) 中搜索是否已有相同需求。
+        - 尽量描述用户问题和使用场景，而不只是具体实现。
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 需求所属模块
+      description: 可选择多个相关模块。
+      multiple: true
+      options:
+        - CLI 命令或输出
+        - MCP Server、Tool 或 Prompt
+        - Agent 客户端、Skill 或 Instructions 接入
+        - 离线数据、版本解析或提取流程
+        - 安装、构建或发布
+        - 官网或文档
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 这个功能解决了什么问题？
+      description: 请说明目标用户、使用场景、当前做法及其限制。
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 期望的解决方案
+      description: 描述期望行为；涉及 CLI、MCP Tool 或配置时，请给出示例。
+      placeholder: |
+        ```bash
+        wot <command> [options]
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+      description: 可说明已尝试的替代办法以及它们无法满足需求的原因。
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: 兼容性与影响范围
+      description: 请说明涉及的客户端、平台、配置格式、命令输出或数据版本。
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 其他补充信息
+      description: 可提供原型、截图、参考实现或关联 Issue。
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已搜索现有 Issue，确认没有重复需求。
+          required: true
+        - label: 我已描述实际使用场景和预期结果。
+          required: true

@@ -108,18 +108,9 @@ catalogs:
       specifier: ^9.3.0
       version: 9.3.0
   testing:
-    tinyexec:
-      specifier: ^1.0.2
-      version: 1.0.2
     vitest:
       specifier: ^4.0.15
       version: 4.0.15
-    vitest-package-exports:
-      specifier: ^0.1.1
-      version: 0.1.1
-    yaml:
-      specifier: ^2.8.2
-      version: 2.8.2
   types:
     '@types/node':
       specifier: ^25.0.1
@@ -184,9 +175,6 @@ importers:
       simple-git-hooks:
         specifier: catalog:cli
         version: 2.13.1
-      tinyexec:
-        specifier: catalog:testing
-        version: 1.0.2
       tsdown:
         specifier: catalog:cli
         version: 0.17.3(publint@0.3.16)(synckit@0.11.11)(typescript@5.9.3)
@@ -199,12 +187,6 @@ importers:
       vitest:
         specifier: catalog:testing
         version: 4.0.15(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.21.0)(yaml@2.8.2)
-      vitest-package-exports:
-        specifier: catalog:testing
-        version: 0.1.1
-      yaml:
-        specifier: catalog:testing
-        version: 2.8.2
 
   apps/website:
     dependencies:
@@ -3861,9 +3843,6 @@ packages:
       vite:
         optional: true
 
-  vitest-package-exports@0.1.1:
-    resolution: {integrity: sha512-rXgU5noxaaMA5VJXgVPhXRzPiQ1WFmWwgo8dQFPg9j/yFM028scO0IAylFHVI8XMRevhozEt1usa6RQYQY26lg==}
-
   vitest@4.0.15:
     resolution: {integrity: sha512-n1RxDp8UJm6N0IbJLQo+yzLZ2sQCDyl1o0LeugbPWf8+8Fttp29GghsQBjYJVmWq3gBFfe9Hs1spR44vovn2wA==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -7401,11 +7380,6 @@ snapshots:
   vitefu@1.1.3(vite@8.0.13(@types/node@25.0.1)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.49.0)(tsx@4.21.0)(yaml@2.8.2)):
     optionalDependencies:
       vite: 8.0.13(@types/node@25.0.1)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.49.0)(tsx@4.21.0)(yaml@2.8.2)
-
-  vitest-package-exports@0.1.1:
-    dependencies:
-      find-up-simple: 1.0.1
-      pathe: 2.0.3
 
   vitest@4.0.15(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:

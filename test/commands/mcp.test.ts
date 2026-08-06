@@ -74,6 +74,17 @@ describe('mcp command', () => {
     expect(joinedStdout(stdout)).toContain('@wot-ui/cli')
   })
 
+  it('prints the OpenCode local MCP schema', async () => {
+    const program = new Command()
+    registerMcpCommand(program)
+
+    await runCli(program, ['mcp', 'print', '--client', 'opencode'])
+
+    expect(joinedStdout(stdout)).toContain('"type": "local"')
+    expect(joinedStdout(stdout)).toContain('"command": [')
+    expect(joinedStdout(stdout)).toContain('"enabled": true')
+  })
+
   it('never exposes unrelated MCP secrets in dry-run output', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'open-wot-secret-command-'))
     directories.push(cwd)

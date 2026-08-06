@@ -3,6 +3,7 @@ import { claudeAdapter } from '../../src/mcp/clients/claude'
 import { runClientCommand } from '../../src/mcp/clients/client-command'
 import { codexAdapter } from '../../src/mcp/clients/codex'
 import { findExecutable } from '../../src/mcp/clients/detect'
+import { opencodeAdapter } from '../../src/mcp/clients/opencode'
 
 vi.mock('../../src/mcp/clients/client-command', () => ({
   runClientCommand: vi.fn(),
@@ -63,6 +64,83 @@ describe('client registration verification', () => {
     await expect(codexAdapter.verifyRegistration(context, { ...state, client: 'codex', displayName: 'Codex', path: '/project/.codex/config.toml' })).resolves.toMatchObject({
       status: 'ready',
     })
+  })
+
+  it('reports a connected OpenCode registration and forwards the timeout', async () => {
+    vi.mocked(runClientCommand).mockResolvedValue({
+      exitCode: 0,
+      stdout: '● wot-ui connected',
+      stderr: '',
+      timedOut: false,
+    })
+
+    await expect(opencodeAdapter.verifyRegistration(
+      context,
+      { ...state, client: 'opencode', displayName: 'OpenCode', path: '/project/opencode.json' },
+      { timeoutMs: 432 },
+    )).resolves.toMatchObject({ status: 'ready' })
+    expect(runClientCommand).toHaveBeenCalledWith('/bin/client', ['mcp', 'list'], expect.objectContaining({ timeoutMs: 432 }))
+  })
+
+  it('reports a disconnected OpenCode registration without exposing command output', async () => {
+    vi.mocked(runClientCommand).mockResolvedValue({
+      exitCode: 0,
+      stdout: 'wot-ui error API_TOKEN=super-secret',
+      stderr: '',
+      timedOut: false,
+    })
+
+    const registration = await opencodeAdapter.verifyRegistration(
+      context,
+      { ...state, client: 'opencode', displayName: 'OpenCode', path: '/project/opencode.json' },
+    )
+    expect(registration).toMatchObject({ status: 'failed', message: expect.stringContaining('not ready') })
+    expect(JSON.stringify(registration)).not.toContain('super-secret')
+  })
+
+  it('does not report an uninitialized OpenCode registration as ready', async () => {
+    vi.mocked(runClientCommand).mockResolvedValue({
+      exitCode: 0,
+      stdout: '○ wot-ui not initialized\n    npx -y @wot-ui/cli mcp',
+      stderr: '',
+      timedOut: false,
+    })
+
+    await expect(opencodeAdapter.verifyRegistration(
+      context,
+      { ...state, client: 'opencode', displayName: 'OpenCode', path: '/project/opencode.json' },
+    )).resolves.toMatchObject({
+      status: 'failed',
+      message: expect.stringContaining('not ready'),
+    })
+  })
+
+  it('ignores another OpenCode server that is pending approval', async () => {
+    vi.mocked(runClientCommand).mockResolvedValue({
+      exitCode: 0,
+      stdout: '○ other pending approval\n● wot-ui connected',
+      stderr: '',
+      timedOut: false,
+    })
+
+    await expect(opencodeAdapter.verifyRegistration(
+      context,
+      { ...state, client: 'opencode', displayName: 'OpenCode', path: '/project/opencode.json' },
+    )).resolves.toMatchObject({ status: 'ready' })
+  })
+
+  it('reports approval pending for the OpenCode wot-ui server itself', async () => {
+    vi.mocked(runClientCommand).mockResolvedValue({
+      exitCode: 0,
+      stdout: '○ wot-ui pending approval\n● other connected',
+      stderr: '',
+      timedOut: false,
+    })
+
+    await expect(opencodeAdapter.verifyRegistration(
+      context,
+      { ...state, client: 'opencode', displayName: 'OpenCode', path: '/project/opencode.json' },
+    )).resolves.toMatchObject({ status: 'pending' })
   })
 
   it('rejects disabled Codex registrations and forwards the remaining doctor timeout', async () => {

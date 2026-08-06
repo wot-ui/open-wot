@@ -7,7 +7,7 @@ import { inspectAgentInstructions, inspectAgentSkill, planAgentInit, planAgentRe
 import { applyChangePlan, confirmChangePlan, formatChangePlan, mergeChangePlans, toPublicChangePlan } from '../application/change-plan'
 import { doctorMcpClients, formatMcpDoctorReport, toPublicMcpDoctorReport } from '../application/mcp-doctor'
 import { detectMcpClients, inspectMcpClients, resolveMcpAdapters, toPublicClientConfigState } from '../application/mcp-onboarding'
-import { isMcpClientId, isMcpScope } from '../mcp/clients'
+import { isMcpClientId, isMcpScope, MCP_CLIENT_IDS } from '../mcp/clients'
 import { writeJson, writeLine } from '../utils/output'
 import { parsePositiveIntegerOption, printError } from './shared'
 
@@ -35,6 +35,8 @@ interface AgentCapabilityReport {
   capabilities: Record<AgentCapability, CapabilityCheck>
 }
 
+const mcpClientChoices = ['auto', 'all', ...MCP_CLIENT_IDS].join(', ')
+
 function parseCapabilities(value?: string): AgentCapability[] {
   const capabilities = (value ?? 'mcp,skill,instructions').split(',').map(item => item.trim()).filter(Boolean)
   const supported: AgentCapability[] = ['mcp', 'skill', 'instructions']
@@ -59,7 +61,7 @@ function parseClient(value?: string): McpClientId | 'auto' | 'all' {
 
 function addOptions(command: Command, defaultClient: 'auto' | 'all' = 'auto'): Command {
   return command
-    .option('--client <client>', 'Agent client: auto, all, claude, cursor, vscode, codex', defaultClient)
+    .option('--client <client>', `Agent client: ${mcpClientChoices}`, defaultClient)
     .option('--scope <scope>', 'MCP configuration scope: project or user', 'project')
     .option('--with <capabilities>', 'capabilities: mcp,skill,instructions', 'mcp,skill,instructions')
     .option('--cwd <directory>', 'project directory', process.cwd())

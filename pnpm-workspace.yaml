@@ -55,10 +55,7 @@ catalogs:
   inlined:
     '@antfu/utils': ^9.3.0
   testing:
-    tinyexec: ^1.0.2
     vitest: ^4.0.15
-    vitest-package-exports: ^0.1.1
-    yaml: ^2.8.2
   types:
     '@types/node': ^25.0.1
 
