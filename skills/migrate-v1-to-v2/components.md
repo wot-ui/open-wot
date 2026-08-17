@@ -350,17 +350,69 @@ videoPreview.showVideoPreview({ src: videoUrl })
 
 ## 图标迁移
 
-v2 对图标示例和部分组件默认图标做了调整。迁移后如果页面出现空图标、图标名称不匹配或视觉含义不一致，优先排查以下属性：`icon`、`prefix-icon`、`suffix-icon`、`class-prefix`、`css-icon`。
+图标迁移以 `v1.14.0` → `v2.3.2` 的视觉与语义人工审核结果为准。295 个 v1 图标中，194 个有推荐映射（50 个同名、144 个改名），101 个没有合适的直接对应项。
 
-**扫描项目中所有图标引用**：
+- 离线权威数据：[`icons.json`](./icons.json)
+- 在线可视化对照：[完整迁移表](https://wot-ui.cn/icon-migration-v2/migration.html)
+- Icon 文档：[迁移说明与常用改名](https://wot-ui.cn/component/icon.html#v1-升级到-v2)
+
+映射是推荐替代关系，不是无差别文本替换规则。多个 v1 图标可能映射到同一个 v2 图标，替换后必须检查页面语义和视觉结果。
+
+如果项目目标版本不是 `v2.3.2`，先使用 `icons.json` 缩小范围，再对照目标版本的 Icon 文档确认图标是否存在；不要假设后续版本的图标集合完全不变。
+
+### 1. 扫描全部图标入口
+
+不要只搜索 `icon="..."`。同时检查 `wd-icon` 的 `name`、组件图标属性、对象配置和动态绑定：
+
 ```bash
-rg 'icon="[^"]*"' --include="*.vue" -o | sort -u
+rg -n --glob '*.{vue,ts,tsx,js,jsx}' \
+  '<wd-icon|(?:^|[\s:])(?:name|icon|icon-class|active-icon|inactive-icon|prefix-icon|suffix-icon)=|(?:name|icon|iconClass|activeIcon|inactiveIcon|prefixIcon|suffixIcon)\s*:'
 ```
 
-然后在 v2 图标文档中逐一核对图标名是否仍然存在。常见变更：
-- `Button` 的 `type="icon"` 已移除，直接传 `icon` 属性即可
-- 自定义图标类名前缀在模板中推荐使用 `class-prefix`（而不是 camelCase 的 `classPrefix`）
-- 部分组件的默认 icon 有视觉更新，功能不变但图标名可能调整
+重点检查：
+
+- `<wd-icon name="..." />`
+- `icon`、`icon-class` / `iconClass`、`active-icon` / `activeIcon`、`inactive-icon` / `inactiveIcon`、`prefix-icon` / `prefixIcon`、`suffix-icon` / `suffixIcon`
+- `:name`、`:icon` 等动态绑定背后的枚举值或接口数据
+- `{ icon: '...' }`、`{ iconClass: '...' }`、`{ activeIcon: '...' }` 等菜单、标签页和操作项配置
+- 这些属性背后的实际图标名称、枚举值和接口数据；不能只修改模板属性名
+
+### 2. 按审核结果处理
+
+读取 `icons.json` 后逐项处理：
+
+1. 名称存在于 `mappings`：只在确认是内置图标值的位置替换为对应 v2 名称。
+2. 名称存在于 `noMatch`：不要自动替换；列入迁移报告，按业务语义重新选择图标或保留原有实现。
+3. 名称不在两者中：可能是自定义图标、已经使用 v2 名称或运行时数据；保留并人工核对。
+4. 动态绑定无法静态确定时：追踪其所有可能取值，不能只修改模板变量名。
+
+图标名称区分大小写，例如审核结果中的 `Launch`、`Export` 必须保留首字母大写。禁止对整个项目执行不带上下文的字符串全局替换。
+
+### 3. 常用改名
+
+| v1 | v2 |
+| --- | --- |
+| `add` | `plus` |
+| `add-circle` | `plus-circle` |
+| `decrease` | `minus` |
+| `arrow-left` | `left` |
+| `arrow-right` | `right` |
+| `arrow-up` | `up` |
+| `arrow-down` | `down` |
+| `search` | `search-line` |
+| `more` | `more-vertical` |
+| `picture` | `image` |
+| `eye-close` | `eye-invisible` |
+| `setting` | `settings` |
+| `help` | `question` |
+| `check-outline` | `check-circle` |
+| `close-outline` | `close-circle` |
+| `fullsreen` | `fullscreen` |
+
+此外：
+
+- `Button` 的 `type="icon"` 已移除，迁移图标名后只保留 `icon` 属性。
+- 相同目标图标承接多个旧图标时，逐个页面回归，不要因为目标相同就合并业务含义。
 
 ---
 
