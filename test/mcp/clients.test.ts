@@ -280,6 +280,38 @@ describe('mcp client adapters', () => {
     expect(await readFile(nestedPath, 'utf8')).not.toContain('"wot-ui"')
   })
 
+  it('prefers OpenCode JSONC when JSON and JSONC coexist in the same directory', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const jsonPath = join(cwd, 'opencode.json')
+    const jsoncPath = join(cwd, 'opencode.jsonc')
+    await writeFile(jsonPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          enabled: true,
+        },
+      },
+    }))
+    await writeFile(jsoncPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['other'],
+          enabled: false,
+        },
+      },
+    }))
+
+    await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({
+      path: jsoncPath,
+      matches: false,
+    })
+    const install = await opencodeAdapter.planInstall(context(cwd, homeDir))
+    expect(install.changes.map(change => change.path)).toEqual([jsoncPath])
+  })
+
   it('reports OpenCode filters that disable required MCP tools', async () => {
     const cwd = await temporaryDirectory()
     const homeDir = await temporaryDirectory()
@@ -410,6 +442,44 @@ describe('mcp client adapters', () => {
       configured: true,
       matches: true,
     })
+  })
+
+  it('preserves OpenCode last-matching permission rule order', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const path = join(cwd, 'opencode.json')
+    const config = {
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          enabled: true,
+        },
+      },
+    }
+    await writeFile(path, JSON.stringify({
+      ...config,
+      permission: {
+        'wot-ui_wot_status': 'allow',
+        'wot-ui_wot_list': 'allow',
+        'wot-ui_*': 'deny',
+      },
+    }))
+
+    await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({
+      matches: false,
+      problem: expect.stringContaining('wot_status, wot_list'),
+    })
+
+    await writeFile(path, JSON.stringify({
+      ...config,
+      permission: {
+        'wot-ui_*': 'deny',
+        'wot-ui_wot_status': 'allow',
+        'wot-ui_wot_list': 'allow',
+      },
+    }))
+    await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({ matches: true })
   })
 
   it('preserves CRLF formatting and supports user scope', async () => {

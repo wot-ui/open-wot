@@ -217,7 +217,9 @@ function encodeServer(server: McpServerDefinition): OpenCodeServerDefinition {
 }
 
 function serverMatches(actual: McpServerDefinition | undefined, expected: McpServerDefinition): boolean {
-  return actual?.command === expected.command
+  if (!actual)
+    return false
+  return actual.command === expected.command
     && JSON.stringify(actual.args) === JSON.stringify(expected.args)
     && JSON.stringify(actual.env ?? {}) === JSON.stringify(expected.env ?? {})
 }
