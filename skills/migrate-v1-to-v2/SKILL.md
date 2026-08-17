@@ -1,6 +1,6 @@
 ---
 name: migrate-v1-to-v2
-description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-design-uni 到 @wot-ui/ui、替换旧组件/旧 API、迁移表单校验体系、修复因 v2 不兼容变更导致的编译错误或运行时报错时调用。
+description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-design-uni 到 @wot-ui/ui、替换旧组件/旧 API、迁移表单校验体系、迁移图标名称，或修复因 v2 不兼容变更导致的编译错误、空图标和运行时报错时调用。
 ---
 
 # 从 v1 迁移到 v2 技能
@@ -13,7 +13,7 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 
 ## 职责边界
 
-- 扫描 v1 用法、替换包名/路径、迁移组件 API、迁移表单校验体系、修复不兼容变更。
+- 扫描 v1 用法、替换包名/路径、迁移组件 API、迁移表单校验体系与内置图标名称、修复不兼容变更。
 - **不负责**新建业务页面或重构业务逻辑，仅做最小必要的兼容性替换。
 - **不负责**安装依赖，由用户自行在终端执行。
 
@@ -42,6 +42,7 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 | 包名 / easycom / Volar / vite 插件 / 国际化 / 路径替换 / uni_modules | `infra.md` |
 | Sass / 主题 / Design Token / CSS 变量 / 样式覆盖 / 深色模式 / ConfigProvider | `styles.md` |
 | Dialog / MessageBox / Empty / StatusTip / Cascader / ColPicker / Keyboard / NumberKeyboard / Button / Tag / Radio / Checkbox / Search / Grid / Fab / Badge / Slider / Tabs / Steps / Swiper / Tooltip / Popover / Collapse / Cell / Input / Textarea / PickerView / ImgCropper / CountTo / Segmented | `components.md` |
+| Icon / 图标 / wd-icon / icon / prefix-icon / suffix-icon / 空图标 | `components.md` 的“图标迁移”与 `icons.json` |
 
 ---
 
@@ -64,12 +65,13 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 | 搜索框浅色样式 | `light` | `variant="light"` |
 | GridItem 点击 | `@itemclick` | `@click` |
 | 工具函数路径 | `components/common/util` | `common/util` |
+| 内置图标名称 | v1 图标集合 | 按 `icons.json` 中的人工审核结果迁移 |
 
 ---
 
 ## 迁移流程
 
-推荐顺序：依赖升级 → 路径替换 → Form 页面 → 高影响组件 → 中低影响组件 → 样式与主题 → 回归测试。
+推荐顺序：依赖升级 → 路径替换 → Form 页面 → 高影响组件 → 中低影响组件 → 图标与低影响属性 → 样式与主题 → 回归测试。
 
 每完成一个阶段后与用户确认再进入下一阶段。
 
@@ -80,7 +82,7 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 3. 搜索 v1 旧用法：
 
    ```bash
-   rg "wot-design-uni|wd-message-box|useMessage|wd-status-tip|wd-col-picker|wd-number-keyboard|@itemclick|shape=|inline|\scell\b|\slight\b|type=\"error\"|type=\"icon\"|type=\"text\"|\splain\b|classPrefix|components/common/util|hide-label|hide-min-max|autoLineWidth|disabled-color|setRoate|useContentSlot|useMoreSlot|\bshow="
+   rg "wot-design-uni|wd-message-box|useMessage|wd-status-tip|wd-col-picker|wd-number-keyboard|wd-icon|prefix-icon|suffix-icon|inactive-icon|active-icon|@itemclick|shape=|inline|\scell\b|\slight\b|type=\"error\"|type=\"icon\"|type=\"text\"|\splain\b|classPrefix|components/common/util|hide-label|hide-min-max|autoLineWidth|disabled-color|setRoate|useContentSlot|useMoreSlot|\bshow="
    ```
 
 4. 如果项目有表单，额外搜索：
@@ -91,7 +93,7 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 
 5. 向用户汇报发现的清单，按影响程度排序：
    - **高影响**：Form（结构+校验体系）、Dialog（原 MessageBox）、ColPicker、NumberKeyboard
-   - **中影响**：Button、Tag、Radio/Checkbox、Search、Grid、Fab
+   - **中影响**：Button、Tag、Radio/Checkbox、Search、Grid、Fab、内置图标名称
    - **低影响**：camelCase 属性名、Badge/Slider/Tabs/Steps/Swiper 等属性微调
 
 ### 阶段二：依赖与路径替换
@@ -108,9 +110,9 @@ Form 表单体系详见 `form.md`。读完后回到**阶段四**继续。
 
 详见 `components.md`（Button、Tag、Radio/Checkbox、Search、Grid、Fab）。读完后回到**阶段五**继续。
 
-### 阶段五：低影响属性迁移
+### 阶段五：低影响属性与图标迁移
 
-详见 `components.md`（Badge、Slider、Tabs、Steps、Swiper、Tooltip、Popover、Collapse、DatetimePickerView、ImgCropper、CountTo、Segmented、PickerView、camelCase 属性名）。读完后回到**阶段六**继续。
+详见 `components.md`（Badge、Slider、Tabs、Steps、Swiper、Tooltip、Popover、Collapse、DatetimePickerView、ImgCropper、CountTo、Segmented、PickerView、图标迁移、camelCase 属性名）。迁移图标时必须读取 `icons.json`，只替换确认映射；“无对应”和动态绑定项保留给人工决策。读完后回到**阶段六**继续。
 
 ### 阶段六：样式与主题迁移
 
@@ -135,4 +137,7 @@ Form 表单体系详见 `form.md`。读完后回到**阶段四**继续。
 - [ ] 深色模式、主题变量、品牌色覆盖是否生效
 - [ ] 弹层在小程序端是否存在样式隔离问题
 - [ ] 自定义覆盖样式是否仍然生效
-- [ ] 图标名称是否仍然存在，按钮高度变化是否影响页面布局
+- [ ] 所有静态内置图标名是否按 `icons.json` 处理，且没有对业务字符串做全局替换
+- [ ] “无对应”、动态绑定和自定义 iconfont 是否已经单独列出并人工确认
+- [ ] 图标的业务语义和视觉结果是否正确，名称大小写是否保持准确
+- [ ] 图标按钮高度变化是否影响页面布局
