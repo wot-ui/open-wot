@@ -42,7 +42,7 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 | 包名 / easycom / Volar / vite 插件 / 国际化 / 路径替换 / uni_modules | `infra.md` |
 | Sass / 主题 / Design Token / CSS 变量 / 样式覆盖 / 深色模式 / ConfigProvider | `styles.md` |
 | Dialog / MessageBox / Empty / StatusTip / Cascader / ColPicker / Keyboard / NumberKeyboard / Button / Tag / Radio / Checkbox / Search / Grid / Fab / Badge / Slider / Tabs / Steps / Swiper / Tooltip / Popover / Collapse / Cell / Input / Textarea / PickerView / ImgCropper / CountTo / Segmented | `components.md` |
-| Icon / 图标 / wd-icon / icon / prefix-icon / suffix-icon / 空图标 | `components.md` 的“图标迁移”与 `icons.json` |
+| Icon / 图标 / wd-icon / icon / iconClass / activeIcon / inactiveIcon / prefixIcon / suffixIcon / 空图标 | `components.md` 的“图标迁移”与 `icons.json` |
 
 ---
 
@@ -82,7 +82,7 @@ description: 将用户项目从 Wot UI v1 迁移到 v2。用户要求升级 wot-
 3. 搜索 v1 旧用法：
 
    ```bash
-   rg "wot-design-uni|wd-message-box|useMessage|wd-status-tip|wd-col-picker|wd-number-keyboard|wd-icon|prefix-icon|suffix-icon|inactive-icon|active-icon|@itemclick|shape=|inline|\scell\b|\slight\b|type=\"error\"|type=\"icon\"|type=\"text\"|\splain\b|classPrefix|components/common/util|hide-label|hide-min-max|autoLineWidth|disabled-color|setRoate|useContentSlot|useMoreSlot|\bshow="
+   rg "wot-design-uni|wd-message-box|useMessage|wd-status-tip|wd-col-picker|wd-number-keyboard|wd-icon|icon-class|iconClass|active-icon|activeIcon|inactive-icon|inactiveIcon|prefix-icon|prefixIcon|suffix-icon|suffixIcon|@itemclick|shape=|inline|\scell\b|\slight\b|type=\"error\"|type=\"icon\"|type=\"text\"|\splain\b|classPrefix|components/common/util|hide-label|hide-min-max|autoLineWidth|disabled-color|setRoate|useContentSlot|useMoreSlot|\bshow="
    ```
 
 4. 如果项目有表单，额外搜索：
@@ -138,6 +138,6 @@ Form 表单体系详见 `form.md`。读完后回到**阶段四**继续。
 - [ ] 弹层在小程序端是否存在样式隔离问题
 - [ ] 自定义覆盖样式是否仍然生效
 - [ ] 所有静态内置图标名是否按 `icons.json` 处理，且没有对业务字符串做全局替换
-- [ ] “无对应”、动态绑定和自定义 iconfont 是否已经单独列出并人工确认
+- [ ] “无对应”、动态绑定和 `iconClass` / `activeIcon` / `inactiveIcon` / `prefixIcon` / `suffixIcon` 是否已经单独列出并人工确认
 - [ ] 图标的业务语义和视觉结果是否正确，名称大小写是否保持准确
 - [ ] 图标按钮高度变化是否影响页面布局

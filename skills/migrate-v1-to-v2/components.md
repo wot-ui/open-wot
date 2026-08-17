@@ -366,23 +366,23 @@ videoPreview.showVideoPreview({ src: videoUrl })
 
 ```bash
 rg -n --glob '*.{vue,ts,tsx,js,jsx}' \
-  '<wd-icon|(?:^|[\s:])(?:name|icon|prefix-icon|suffix-icon|inactive-icon|active-icon)=|(?:name|icon)\s*:'
+  '<wd-icon|(?:^|[\s:])(?:name|icon|icon-class|active-icon|inactive-icon|prefix-icon|suffix-icon)=|(?:name|icon|iconClass|activeIcon|inactiveIcon|prefixIcon|suffixIcon)\s*:'
 ```
 
 重点检查：
 
 - `<wd-icon name="..." />`
-- `icon`、`prefix-icon`、`suffix-icon`、`inactive-icon`、`active-icon`
+- `icon`、`icon-class` / `iconClass`、`active-icon` / `activeIcon`、`inactive-icon` / `inactiveIcon`、`prefix-icon` / `prefixIcon`、`suffix-icon` / `suffixIcon`
 - `:name`、`:icon` 等动态绑定背后的枚举值或接口数据
-- `{ icon: '...' }` 等菜单、标签页和操作项配置
-- `class-prefix`、`css-icon` 和自定义 iconfont；这些不能套用内置图标映射
+- `{ icon: '...' }`、`{ iconClass: '...' }`、`{ activeIcon: '...' }` 等菜单、标签页和操作项配置
+- 这些属性背后的实际图标名称、枚举值和接口数据；不能只修改模板属性名
 
 ### 2. 按审核结果处理
 
 读取 `icons.json` 后逐项处理：
 
 1. 名称存在于 `mappings`：只在确认是内置图标值的位置替换为对应 v2 名称。
-2. 名称存在于 `noMatch`：不要自动替换；列入迁移报告，按业务语义重新选图标，或通过 `class-prefix` / `css-icon` 保留自定义图标。
+2. 名称存在于 `noMatch`：不要自动替换；列入迁移报告，按业务语义重新选择图标或保留原有实现。
 3. 名称不在两者中：可能是自定义图标、已经使用 v2 名称或运行时数据；保留并人工核对。
 4. 动态绑定无法静态确定时：追踪其所有可能取值，不能只修改模板变量名。
 
@@ -412,7 +412,6 @@ rg -n --glob '*.{vue,ts,tsx,js,jsx}' \
 此外：
 
 - `Button` 的 `type="icon"` 已移除，迁移图标名后只保留 `icon` 属性。
-- 自定义图标类名前缀在模板中使用 `class-prefix`，不要把自定义类名当作内置图标迁移。
 - 相同目标图标承接多个旧图标时，逐个页面回归，不要因为目标相同就合并业务含义。
 
 ---
