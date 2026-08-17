@@ -47,7 +47,7 @@
 | `doctor` | 检查文件和真实 MCP handshake |
 | `remove` | 删除 open-wot 托管内容 |
 
-`init/status/doctor/remove` 支持 `--client auto|all|claude|cursor|vscode|codex`、`--scope`、`--with`、`--cwd`、`--format` 和 `--pin`。`init/remove` 支持 `--dry-run`、`--yes`；`doctor` 支持 `--timeout`。
+`init/status/doctor/remove` 支持 `--client auto|all|claude|cursor|vscode|codex|opencode|antigravity`、`--scope`、`--with`、`--cwd`、`--format` 和 `--pin`。`init/remove` 支持 `--dry-run`、`--yes`；`doctor` 支持 `--timeout`。
 
 ### MCP
 
@@ -71,6 +71,8 @@
 | Cursor | `.cursor/mcp.json` |
 | VS Code | `.vscode/mcp.json` |
 | Codex | `.codex/config.toml` |
+| OpenCode | `opencode.json[c]` / `.opencode/opencode.json[c]` |
+| Antigravity | `.agents/mcp_config.json` |
 
 一次接入所有客户端：
 

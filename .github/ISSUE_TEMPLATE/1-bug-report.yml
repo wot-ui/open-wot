@@ -1,0 +1,102 @@
+name: 向 open-wot 反馈 Bug
+description: 创建一个 Issue 描述 CLI、MCP、Agent 接入、离线数据或官网中遇到的问题。
+title: '[Bug] 请在此填写标题'
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先：
+
+        - 阅读 [README](https://github.com/wot-ui/open-wot#readme) 并确认使用方式。
+        - 在 [Issues](https://github.com/wot-ui/open-wot/issues) 中搜索是否已有相同问题。
+        - 使用最新版本复现；如无法升级，请在下方说明原因。
+        - 删除日志、配置和截图中的 Token、密钥及其他敏感信息。
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 问题所属模块
+      description: 可选择多个相关模块。
+      multiple: true
+      options:
+        - CLI 命令或输出
+        - MCP Server、Tool 或 Prompt
+        - Agent 客户端、Skill 或 Instructions 接入
+        - 离线数据、版本解析或提取流程
+        - 安装、构建或发布
+        - 官网或文档
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: cli-version
+    attributes:
+      label: open-wot 版本
+      description: 请粘贴 `wot -V` 的输出；源码运行请填写 commit SHA。
+      placeholder: 例如：1.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      description: 请提供 Node.js、包管理器、操作系统，以及涉及的 Agent 客户端和版本。
+      placeholder: |
+        Node.js: 20.19.0
+        pnpm: 10.25.0
+        OS: macOS 15
+        Client: OpenCode 1.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 最小复现步骤
+      description: 请提供可直接执行的命令、最小仓库地址或精简配置，并说明从干净环境开始如何复现。
+      placeholder: |
+        1. 执行 `wot agent init ...`
+        2. 打开生成的配置文件
+        3. 执行 `wot agent doctor ...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或配置片段
+      description: 请粘贴必要内容并移除 Token、密钥、用户名和私有路径等敏感信息。
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 其他补充信息
+      description: 可补充可能的原因、临时解决办法、截图或关联 Issue。
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已搜索现有 Issue，确认没有重复问题。
+          required: true
+        - label: 我已移除日志和配置中的敏感信息。
+          required: true
