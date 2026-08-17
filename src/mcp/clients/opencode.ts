@@ -1,7 +1,7 @@
 import type { ParseError } from 'jsonc-parser'
 import type { ChangePlan, ClientConfigState, ClientDetection, ClientRegistrationState, DetectContext, McpClientAdapter, McpScope, McpServerDefinition, PlanContext, PlannedFileChange, RegistrationCheckOptions } from './types'
 import { access, readFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import { applyEdits, modify, parse, printParseErrorCode } from 'jsonc-parser'
 import { clientCommandOutput, runClientCommand } from './client-command'
@@ -11,8 +11,10 @@ import { REQUIRED_WOT_MCP_TOOLS } from './types'
 interface OpenCodeServerDefinition {
   type: 'local'
   command: string[]
+  cwd?: string
   enabled: boolean
   environment?: Record<string, string>
+  timeout?: number
 }
 
 interface OpenCodeConfigSource {
@@ -28,9 +30,20 @@ function userConfigRoot(context: DetectContext): string {
   return resolve(env.XDG_CONFIG_HOME || join(context.homeDir, '.config'))
 }
 
-function userConfigAllowedRoot(context: DetectContext): string {
+async function userConfigAllowedRoot(context: DetectContext): Promise<string> {
   const env = context.env ?? process.env
-  return env.XDG_CONFIG_HOME ? userConfigRoot(context) : context.homeDir
+  if (!env.XDG_CONFIG_HOME)
+    return context.homeDir
+
+  let current = userConfigRoot(context)
+  while (true) {
+    if (await access(current).then(() => true).catch(() => false))
+      return current
+    const parent = dirname(current)
+    if (parent === current)
+      return current
+    current = parent
+  }
 }
 
 async function readOptional(path: string): Promise<string | undefined> {
@@ -44,17 +57,48 @@ async function readOptional(path: string): Promise<string | undefined> {
   }
 }
 
-function configCandidates(context: DetectContext, scope: McpScope): string[] {
+interface OpenCodeProjectLayout {
+  directories: string[]
+  writeRoot: string
+}
+
+async function projectLayout(cwd: string): Promise<OpenCodeProjectLayout> {
+  const start = resolve(cwd)
+  const directories = [start]
+  let current = start
+  while (true) {
+    if (await access(join(current, '.git')).then(() => true).catch(() => false))
+      return { directories: directories.reverse(), writeRoot: current }
+    const parent = dirname(current)
+    if (parent === current)
+      return { directories: directories.reverse(), writeRoot: start }
+    directories.push(parent)
+    current = parent
+  }
+}
+
+async function configCandidates(context: DetectContext, scope: McpScope): Promise<string[]> {
   if (scope === 'project') {
+    const { directories } = await projectLayout(context.cwd)
     return [
-      resolve(context.cwd, 'opencode.json'),
-      resolve(context.cwd, 'opencode.jsonc'),
-      resolve(context.cwd, '.opencode', 'opencode.json'),
-      resolve(context.cwd, '.opencode', 'opencode.jsonc'),
+      ...directories.flatMap(directory => [
+        resolve(directory, 'opencode.json'),
+        resolve(directory, 'opencode.jsonc'),
+      ]),
+      ...directories.toReversed().flatMap(directory => [
+        resolve(directory, '.opencode', 'opencode.json'),
+        resolve(directory, '.opencode', 'opencode.jsonc'),
+      ]),
     ]
   }
   const directory = join(userConfigRoot(context), 'opencode')
   return [resolve(directory, 'opencode.json'), resolve(directory, 'opencode.jsonc')]
+}
+
+async function defaultConfigPath(context: DetectContext, scope: McpScope): Promise<string> {
+  if (scope === 'project')
+    return resolve((await projectLayout(context.cwd)).writeRoot, 'opencode.json')
+  return resolve(userConfigRoot(context), 'opencode', 'opencode.json')
 }
 
 function parseObject(content: string, path: string): Record<string, unknown> {
@@ -84,7 +128,7 @@ function getServerEntry(config: Record<string, unknown>): { present: boolean, va
 
 async function readConfigSources(context: DetectContext, scope: McpScope): Promise<OpenCodeConfigSource[]> {
   const sources: OpenCodeConfigSource[] = []
-  for (const path of configCandidates(context, scope)) {
+  for (const path of await configCandidates(context, scope)) {
     const content = await readOptional(path)
     if (content === undefined)
       continue
@@ -207,12 +251,28 @@ function decodeServer(value: unknown): McpServerDefinition | undefined {
   }
 }
 
-function encodeServer(server: McpServerDefinition): OpenCodeServerDefinition {
+function encodeServer(server: McpServerDefinition, existing?: unknown): OpenCodeServerDefinition {
+  const existingServer = isRecord(existing) ? existing : undefined
+  const existingLocalServer = existingServer?.type === 'local' ? existingServer : undefined
+  const cwd = typeof existingLocalServer?.cwd === 'string' ? existingLocalServer.cwd : undefined
+  const existingEnvironment = isStringMap(existingLocalServer?.environment)
+    ? existingLocalServer.environment
+    : undefined
+  const timeout = typeof existingServer?.timeout === 'number'
+    && Number.isInteger(existingServer.timeout)
+    && existingServer.timeout > 0
+    ? existingServer.timeout
+    : undefined
+  const environment = existingEnvironment || server.env
+    ? { ...existingEnvironment, ...server.env }
+    : undefined
   return {
     type: 'local',
     command: [server.command, ...server.args],
+    ...(cwd === undefined ? {} : { cwd }),
     enabled: true,
-    ...(server.env ? { environment: server.env } : {}),
+    ...(environment ? { environment } : {}),
+    ...(timeout === undefined ? {} : { timeout }),
   }
 }
 
@@ -221,7 +281,7 @@ function serverMatches(actual: McpServerDefinition | undefined, expected: McpSer
     return false
   return actual.command === expected.command
     && JSON.stringify(actual.args) === JSON.stringify(expected.args)
-    && JSON.stringify(actual.env ?? {}) === JSON.stringify(expected.env ?? {})
+    && Object.entries(expected.env ?? {}).every(([key, value]) => actual.env?.[key] === value)
 }
 
 export const opencodeAdapter: McpClientAdapter = {
@@ -231,8 +291,8 @@ export const opencodeAdapter: McpClientAdapter = {
 
   async detect(context): Promise<ClientDetection> {
     const configLocations = [
-      ...configCandidates(context, 'project'),
-      ...configCandidates(context, 'user'),
+      ...await configCandidates(context, 'project'),
+      ...await configCandidates(context, 'user'),
     ]
     const executable = await findExecutable(['opencode'], context)
     const hasConfig = (await Promise.all(configLocations.map(path => access(path).then(() => true).catch(() => false)))).some(Boolean)
@@ -248,7 +308,7 @@ export const opencodeAdapter: McpClientAdapter = {
   },
 
   async inspect(context): Promise<ClientConfigState> {
-    let path = configCandidates(context, context.scope)[0]!
+    let path = await defaultConfigPath(context, context.scope)
     try {
       const sources = await readConfigSources(context, context.scope)
       const selected = selectConfigSource(sources)
@@ -304,13 +364,18 @@ export const opencodeAdapter: McpClientAdapter = {
   async planInstall(context): Promise<ChangePlan> {
     const sources = await readConfigSources(context, context.scope)
     const selected = selectConfigSource(sources)
-    const path = selected?.path ?? configCandidates(context, context.scope)[0]!
+    const path = selected?.path ?? await defaultConfigPath(context, context.scope)
+    const allowedRoot = context.scope === 'project' ? dirname(path) : await userConfigAllowedRoot(context)
     const before = selected?.content
     const source = before?.trim() ? before : '{}\n'
     parseObject(source, path)
-    const after = applyEdits(source, modify(source, ['mcp', 'wot-ui'], encodeServer(context.server), {
-      formattingOptions: { insertSpaces: true, tabSize: 2, eol: source.includes('\r\n') ? '\r\n' : '\n' },
-    }))
+    const effectiveEntry = getServerEntry(mergeConfigSources(sources))
+    const alreadyMatches = serverMatches(decodeServer(effectiveEntry.value), context.server)
+    const after = alreadyMatches
+      ? source
+      : applyEdits(source, modify(source, ['mcp', 'wot-ui'], encodeServer(context.server, selected?.serverEntry), {
+          formattingOptions: { insertSpaces: true, tabSize: 2, eol: source.includes('\r\n') ? '\r\n' : '\n' },
+        }))
     const unchanged = before !== undefined && before === after
     return {
       id: `opencode-${context.scope}-install`,
@@ -320,7 +385,7 @@ export const opencodeAdapter: McpClientAdapter = {
         : [{
             type: 'write-file',
             path,
-            allowedRoot: context.scope === 'project' ? context.cwd : userConfigAllowedRoot(context),
+            allowedRoot,
             before,
             after,
             reason: 'Add or update mcp.wot-ui as an OpenCode local server',
@@ -337,6 +402,7 @@ export const opencodeAdapter: McpClientAdapter = {
 
   async planRemove(context): Promise<ChangePlan> {
     const sources = await readConfigSources(context, context.scope)
+    const userAllowedRoot = context.scope === 'user' ? await userConfigAllowedRoot(context) : undefined
     const changes: PlannedFileChange[] = sources.flatMap((source) => {
       if (!source.hasServerEntry)
         return []
@@ -348,7 +414,7 @@ export const opencodeAdapter: McpClientAdapter = {
       return [{
         type: 'write-file',
         path: source.path,
-        allowedRoot: context.scope === 'project' ? context.cwd : userConfigAllowedRoot(context),
+        allowedRoot: userAllowedRoot ?? dirname(source.path),
         before: source.content,
         after,
         reason: 'Remove only the wot-ui OpenCode MCP server entry',
@@ -379,7 +445,7 @@ export const opencodeAdapter: McpClientAdapter = {
     }
     const result = await runClientCommand(executable, ['mcp', 'list'], { ...context, timeoutMs: options?.timeoutMs })
     const output = clientCommandOutput(result)
-    const serverLine = output.split(/\r?\n/).find(line => /\bwot-ui\b/i.test(line))
+    const serverLine = output.split(/\r?\n/).find(line => /^\s*(?:(?:[│┃]\s*)?[✓●○⚠✗×✔!]\s+){0,2}wot-ui(?=\s|$)/i.test(line))
     const command = `${executable} mcp list`
     if (result.timedOut || result.error) {
       return {

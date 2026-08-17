@@ -129,6 +129,23 @@ describe('client registration verification', () => {
     )).resolves.toMatchObject({ status: 'ready' })
   })
 
+  it('matches the exact OpenCode server name when another name contains wot-ui', async () => {
+    vi.mocked(runClientCommand).mockResolvedValue({
+      exitCode: 0,
+      stdout: '●  ✓ my-wot-ui-backup connected\n│      npx wot-ui connected\n●  ✗ wot-ui failed',
+      stderr: '',
+      timedOut: false,
+    })
+
+    await expect(opencodeAdapter.verifyRegistration(
+      context,
+      { ...state, client: 'opencode', displayName: 'OpenCode', path: '/project/opencode.json' },
+    )).resolves.toMatchObject({
+      status: 'failed',
+      message: expect.stringContaining('not ready'),
+    })
+  })
+
   it('reports approval pending for the OpenCode wot-ui server itself', async () => {
     vi.mocked(runClientCommand).mockResolvedValue({
       exitCode: 0,

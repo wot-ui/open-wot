@@ -200,7 +200,7 @@ describe('mcp client adapters', () => {
   it('uses XDG_CONFIG_HOME for the OpenCode user config', async () => {
     const cwd = await temporaryDirectory()
     const homeDir = await temporaryDirectory()
-    const configHome = await temporaryDirectory()
+    const configHome = join(await temporaryDirectory(), 'nested', 'config')
     const userContext = {
       ...context(cwd, homeDir, 'user'),
       env: { PATH: '', XDG_CONFIG_HOME: configHome },
@@ -236,7 +236,7 @@ describe('mcp client adapters', () => {
     expect(removed).not.toContain('"wot-ui"')
   })
 
-  it('uses the highest-priority OpenCode server definition and removes every definition', async () => {
+  it('updates only the highest-priority OpenCode definition and preserves inherited environment', async () => {
     const cwd = await temporaryDirectory()
     const homeDir = await temporaryDirectory()
     const directPath = join(cwd, 'opencode.json')
@@ -248,6 +248,7 @@ describe('mcp client adapters', () => {
           type: 'local',
           command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
           enabled: true,
+          environment: { API_TOKEN: 'secret' },
         },
       },
     }))
@@ -268,16 +269,194 @@ describe('mcp client adapters', () => {
     const install = await opencodeAdapter.planInstall(context(cwd, homeDir))
     expect(install.changes.map(change => change.path)).toEqual([nestedPath])
     await applyChangePlan(install)
+    expect(await readFile(directPath, 'utf8')).toContain('"wot-ui"')
+    expect(await readFile(directPath, 'utf8')).toContain('API_TOKEN')
     await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({
       path: nestedPath,
       matches: true,
     })
+    expect((await opencodeAdapter.planInstall(context(cwd, homeDir))).changes).toHaveLength(0)
 
     const remove = await opencodeAdapter.planRemove(context(cwd, homeDir))
     expect(remove.changes.map(change => change.path)).toEqual([directPath, nestedPath])
     await applyChangePlan(remove)
     expect(await readFile(directPath, 'utf8')).not.toContain('"wot-ui"')
     expect(await readFile(nestedPath, 'utf8')).not.toContain('"wot-ui"')
+  })
+
+  it('preserves environment on the effective OpenCode definition during install', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const path = join(cwd, 'opencode.json')
+    const installContext = {
+      ...context(cwd, homeDir),
+      server: {
+        ...createMcpServerDefinition(),
+        env: { REQUIRED_TOKEN: 'managed' },
+      },
+    }
+    await writeFile(path, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          cwd: './tools',
+          enabled: true,
+          environment: { API_TOKEN: 'secret' },
+          timeout: 12_345,
+        },
+      },
+    }))
+
+    await expect(opencodeAdapter.inspect(installContext)).resolves.toMatchObject({ matches: false })
+    const install = await opencodeAdapter.planInstall(installContext)
+    expect(install.changes).toHaveLength(1)
+    await applyChangePlan(install)
+    expect(JSON.parse(await readFile(path, 'utf8'))).toMatchObject({
+      mcp: {
+        'wot-ui': {
+          cwd: './tools',
+          environment: {
+            API_TOKEN: 'secret',
+            REQUIRED_TOKEN: 'managed',
+          },
+          timeout: 12_345,
+        },
+      },
+    })
+    await expect(opencodeAdapter.inspect(installContext)).resolves.toMatchObject({
+      path,
+      matches: true,
+      server: {
+        env: {
+          API_TOKEN: 'secret',
+          REQUIRED_TOKEN: 'managed',
+        },
+      },
+    })
+    expect((await opencodeAdapter.planInstall(installContext)).changes).toHaveLength(0)
+  })
+
+  it('does not rewrite a compatible OpenCode definition with extra settings', async () => {
+    const cwd = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const path = join(cwd, 'opencode.jsonc')
+    const content = `{
+  "mcp": {
+    "wot-ui": {
+      // Keep user-managed process settings.
+      "type": "local",
+      "command": ["npx", "-y", "@wot-ui/cli", "mcp"],
+      "cwd": "./tools",
+      "enabled": true,
+      "environment": { "API_TOKEN": "secret" },
+      "timeout": 12345
+    }
+  }
+}
+`
+    await writeFile(path, content)
+
+    const installContext = context(cwd, homeDir)
+    await expect(opencodeAdapter.inspect(installContext)).resolves.toMatchObject({ matches: true })
+    expect((await opencodeAdapter.planInstall(installContext)).changes).toHaveLength(0)
+    expect(await readFile(path, 'utf8')).toBe(content)
+  })
+
+  it('discovers OpenCode project config from a parent Git worktree', async () => {
+    const root = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const cwd = join(root, 'packages', 'app')
+    const path = join(root, 'opencode.json')
+    await writeFile(join(root, '.git'), 'gitdir: /tmp/example-worktree')
+    await mkdir(cwd, { recursive: true })
+    await writeFile(path, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          enabled: true,
+        },
+      },
+    }))
+
+    const nestedContext = context(cwd, homeDir)
+    await expect(opencodeAdapter.detect(nestedContext)).resolves.toMatchObject({
+      installed: true,
+      configLocations: expect.arrayContaining([path]),
+    })
+    await expect(opencodeAdapter.inspect(nestedContext)).resolves.toMatchObject({ path, matches: true })
+    await applyChangePlan(await opencodeAdapter.planInstall(nestedContext))
+    expect((await opencodeAdapter.planInstall(nestedContext)).changes).toHaveLength(0)
+
+    const remove = await opencodeAdapter.planRemove(nestedContext)
+    expect(remove.changes.map(change => change.path)).toEqual([path])
+    await applyChangePlan(remove)
+    expect(await readFile(path, 'utf8')).not.toContain('"wot-ui"')
+  })
+
+  it('applies a nested direct OpenCode config after its parent config', async () => {
+    const root = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const cwd = join(root, 'packages', 'app')
+    const rootPath = join(root, 'opencode.json')
+    const nestedPath = join(cwd, 'opencode.json')
+    await mkdir(join(root, '.git'), { recursive: true })
+    await mkdir(cwd, { recursive: true })
+    await writeFile(rootPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          enabled: true,
+        },
+      },
+    }))
+    await writeFile(nestedPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['other'],
+          enabled: false,
+        },
+      },
+    }))
+
+    const nestedContext = context(cwd, homeDir)
+    await expect(opencodeAdapter.inspect(nestedContext)).resolves.toMatchObject({
+      path: nestedPath,
+      matches: false,
+    })
+    const install = await opencodeAdapter.planInstall(nestedContext)
+    expect(install.changes.map(change => change.path)).toEqual([nestedPath])
+    await applyChangePlan(install)
+    await expect(opencodeAdapter.inspect(nestedContext)).resolves.toMatchObject({ path: nestedPath, matches: true })
+  })
+
+  it('discovers parent OpenCode config outside Git and creates new config in cwd', async () => {
+    const root = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const cwd = join(root, 'packages', 'app')
+    const parentPath = join(root, 'opencode.json')
+    await mkdir(cwd, { recursive: true })
+    await writeFile(parentPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          enabled: true,
+        },
+      },
+    }))
+
+    await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({
+      path: parentPath,
+      matches: true,
+    })
+
+    const emptyCwd = await temporaryDirectory()
+    const install = await opencodeAdapter.planInstall(context(emptyCwd, homeDir))
+    expect(install.changes.map(change => change.path)).toEqual([join(emptyCwd, 'opencode.json')])
   })
 
   it('prefers OpenCode JSONC when JSON and JSONC coexist in the same directory', async () => {
@@ -310,6 +489,49 @@ describe('mcp client adapters', () => {
     })
     const install = await opencodeAdapter.planInstall(context(cwd, homeDir))
     expect(install.changes.map(change => change.path)).toEqual([jsoncPath])
+    await applyChangePlan(install)
+    expect(await readFile(jsonPath, 'utf8')).toContain('"wot-ui"')
+    await expect(opencodeAdapter.inspect(context(cwd, homeDir))).resolves.toMatchObject({ path: jsoncPath, matches: true })
+  })
+
+  it('applies parent .opencode config after a nested .opencode config', async () => {
+    const root = await temporaryDirectory()
+    const homeDir = await temporaryDirectory()
+    const cwd = join(root, 'packages', 'app')
+    const rootPath = join(root, '.opencode', 'opencode.json')
+    const nestedPath = join(cwd, '.opencode', 'opencode.json')
+    await mkdir(join(root, '.git'), { recursive: true })
+    await mkdir(join(root, '.opencode'), { recursive: true })
+    await mkdir(join(cwd, '.opencode'), { recursive: true })
+    await writeFile(rootPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['other'],
+          enabled: false,
+        },
+      },
+    }))
+    await writeFile(nestedPath, JSON.stringify({
+      mcp: {
+        'wot-ui': {
+          type: 'local',
+          command: ['npx', '-y', '@wot-ui/cli', 'mcp'],
+          enabled: true,
+        },
+      },
+    }))
+
+    const nestedContext = context(cwd, homeDir)
+    await expect(opencodeAdapter.inspect(nestedContext)).resolves.toMatchObject({
+      path: rootPath,
+      matches: false,
+    })
+    const install = await opencodeAdapter.planInstall(nestedContext)
+    expect(install.changes.map(change => change.path)).toEqual([rootPath])
+    await applyChangePlan(install)
+    expect(await readFile(nestedPath, 'utf8')).toContain('"wot-ui"')
+    await expect(opencodeAdapter.inspect(nestedContext)).resolves.toMatchObject({ path: rootPath, matches: true })
   })
 
   it('reports OpenCode filters that disable required MCP tools', async () => {
