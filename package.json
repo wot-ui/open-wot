@@ -1,7 +1,7 @@
 {
   "name": "@wot-ui/cli",
   "type": "module",
-  "version": "1.1.0-beta.2",
+  "version": "1.1.0",
   "packageManager": "pnpm@10.25.0",
   "description": "面向 wot-ui 的 CLI、MCP 与数据提取工具集",
   "license": "MIT",
