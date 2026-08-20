@@ -1,0 +1,46 @@
+schema: spec-driven
+
+context: |
+  open-wot 是 wot-ui v2 的 CLI、MCP Server、Agent Skills 与离线知识库仓库。
+  代码库是面向 Node.js >=20 的 TypeScript ESM pnpm workspace。运行时代码位于 src/，
+  提取与同步工具位于 scripts/，发布时携带的离线快照位于 data/，Agent Skills 位于 skills/，
+  apps/website 将 README.md 作为 /docs 的内容源。
+
+  优先做最小且兼容的改动。除非 proposal 明确改变现有行为，否则保持 CLI 输出、MCP 契约、
+  数据结构、生成数据兼容性和测试预期稳定。修改 CLI、MCP、prompt 或数据契约时，必须同步
+  补充对应测试与 README。修改提取逻辑时，应使用真实上游仓库或具有代表性的 fixture 验证。
+  修改官网时必须运行 pnpm site:lint 和 pnpm site:build。
+
+  标准验证命令是 pnpm lint、pnpm typecheck、pnpm test 和 pnpm build。对于外部可见的 CLI 输出、
+  MCP handshake、配置写入、数据提取或打包行为，还需要增加对应的定向人工验证。
+  不要在变更中重构无关模块。
+
+  所有 SDD/OpenSpec 规划文档必须使用简体中文。只有代码标识符、文件路径、命令、产品名以及
+  OpenSpec 校验器要求的固定语法保留英文。
+
+rules:
+  proposal:
+    - 使用简体中文撰写标题和正文；仅保留必要的代码标识符、路径、命令与产品名。
+    - 说明用户可见结果、兼容性影响和明确的非目标。
+    - 明确 README、CLI 输出、MCP 契约、离线数据、Skills 或官网是否受到影响。
+  specs:
+    - 使用简体中文撰写 Purpose、Requirement 名称、Scenario 名称、描述和验收内容；仅保留 OpenSpec 校验器要求的固定英文标记。
+    - 使用具体的 GIVEN/WHEN/THEN 风格场景表达外部可观察行为。
+    - 变更涉及配置写入或公共契约时，必须包含兼容性、幂等、失败或回滚场景。
+  design:
+    - 使用简体中文撰写设计背景、决策、取舍、风险和迁移方案。
+    - 明确设计影响的现有模块与边界。
+    - 说明公共输出、存储数据和生成配置的迁移或兼容处理。
+  tasks:
+    - 使用简体中文撰写任务分组和任务描述，保留命令、文件路径及代码标识符原文。
+    - 保持实现任务粒度小、顺序明确且可独立验证。
+    - 包含定向测试、必要的 README 更新以及适合本次变更的准确验证命令。
+
+operations:
+  apply:
+    guidance:
+      - 保留无关的用户改动，避免无关重构。
+      - 实现过程中运行定向检查，完成后运行受影响范围要求的完整验证。
+  archive:
+    guidance:
+      - 记录已经通过的验证命令，以及仍然存在的兼容性或发布风险。

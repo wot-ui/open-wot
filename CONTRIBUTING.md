@@ -4,7 +4,7 @@
 
 ## 开发环境
 
-- Node.js `>= 20`
+- Node.js `>= 20.19.0`
 - pnpm `10.25.x`
 
 安装依赖：
@@ -26,12 +26,32 @@ src/utils          文件、终端、项目扫描等公共能力
 scripts            数据提取、同步与压缩
 data               发布时携带的 wot-ui 多版本离线数据
 skills             随仓库维护的 Agent Skills
+.agents/skills     仓库维护 Agent 共用的 OpenSpec Skills
 test               单元测试与命令测试
 apps/website       官网；/docs 在构建时直接渲染根 README.md
 .github/workflows  CI、数据同步、发布和覆盖率任务
 ```
 
 ## 本地开发
+
+### OpenSpec 变更流程
+
+本仓库使用 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 管理较大的需求与设计变更。OpenSpec `1.9.0` 已作为精确版本的开发依赖锁定，`pnpm install` 后可以通过 `pnpm exec openspec` 执行仓库维护命令。共享 Skills 执行期间会调用 `openspec`，因此还需要将同一版本安装到 `PATH`：
+
+```bash
+npm install -g @fission-ai/openspec@1.9.0
+openspec --version # 应输出 1.9.0
+```
+
+新功能、破坏性变更、跨模块改造或架构调整应先调用 `.agents/skills/openspec-propose` 创建变更提案，再调用 `openspec-apply-change`、`openspec-verify-change` 和 `openspec-archive-change` 完成实现、验证与归档。小型 bug 修复、拼写和文档微调可以直接提交。
+
+所有 SDD/OpenSpec 规划文档，包括 proposal、spec、design 和 tasks，统一使用简体中文。只有 OpenSpec 校验器要求的固定英文标记、代码标识符、文件路径、命令和产品名保留原文。
+
+OpenSpec 的仓库配置位于 `openspec/config.yaml`，共享工作流只保存在 `.agents/skills/openspec-*`，不为各客户端维护重复副本。Claude Code 通过 `CLAUDE.md -> AGENTS.md` 和 `.claude/skills -> ../.agents/skills` 两个相对 Git 符号链接复用同一套仓库规则与 Skills。
+
+这些符号链接只用于 open-wot 仓库自身的开发与维护。`wot agent init --client ...` 面向其他项目安装 MCP、Skill 和 Instructions，不应用于建立或验证本仓库的兼容链接。检出仓库时需要保留 Git 符号链接，并确认 Git 将两个入口记录为 mode `120000`。
+
+升级 OpenSpec 时先显式更新 `pnpm-workspace.yaml` 中的固定版本，再运行 `pnpm install` 和 `pnpm exec openspec update --force` 刷新生成文件，并一并提交依赖、lockfile 与生成物。活动变更保存在 `openspec/changes/`，归档后形成的主规格保存在 `openspec/specs/`。
 
 ### Watch 模式
 
@@ -120,7 +140,8 @@ pnpm build
 | MCP/Agent 配置写入 | 先跑 `--dry-run`；验证幂等、保留用户配置和 remove |
 | 数据结构、loader 或版本解析 | 验证已有快照兼容；同步 commands、MCP 和测试 |
 | 数据提取脚本 | 运行真实 extract/sync，或至少使用真实上游 fixture 验证 |
-| Skills 或 Agent Instructions | 运行 `agent init --dry-run`；检查安装路径和发布包文件 |
+| 面向其他项目的 Skills 或 Agent Instructions 安装行为 | 在独立临时项目运行 `agent init --dry-run`；检查安装路径和发布包文件 |
+| 仓库自身的 Claude Code 兼容链接 | 检查相对链接目标、Git mode `120000` 和发布包排除结果 |
 | package exports、files 或构建 | 运行 publint 和 npm pack 检查 |
 | 仅文档 | 检查本地链接、代码示例和 `git diff --check` |
 

@@ -23,6 +23,14 @@ open-wot 是 wot-ui v2 的 CLI、MCP 与离线知识库仓库。优先做最小�
 - 构建：`pnpm build`
 - 全量校验：`pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 
+## OpenSpec Workflow
+
+- 新功能、破坏性变更、跨模块改造或架构调整，先使用 `.agents/skills/openspec-propose` 创建并评审变更提案，再使用 `.agents/skills/openspec-apply-change` 实现。
+- 小型 bug 修复、拼写和文档微调可以直接修改，不要求创建 OpenSpec change。
+- 实现完成后使用 `.agents/skills/openspec-verify-change` 核对规格、任务、实现和测试；确认无误后使用 `.agents/skills/openspec-archive-change` 归档。
+- OpenSpec 的项目上下文和 artifact 规则位于 `openspec/config.yaml`；进行 OpenSpec 工作流时以 CLI 返回的路径和状态为准，不手工假设 artifact 位置。
+- SDD/OpenSpec 的 proposal、spec、design 和 tasks 文档统一使用简体中文；仅保留校验器要求的固定英文标记以及代码标识符、路径、命令和产品名。
+
 ## Conventions
 
 - 修改 CLI、MCP tool、prompt 或数据结构后，同步检查对应测试与 README。

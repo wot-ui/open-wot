@@ -391,6 +391,10 @@ open-wot 会修改客户端配置，因此写入流程默认保守：
 
 环境要求：Node.js `>= 20`、pnpm `10.25.x`。
 
+本仓库自身的 Agent 资产统一维护在 `AGENTS.md` 与 `.agents/skills/`。为让 Claude Code 读取同一份内容，仓库提交了两个相对符号链接：`CLAUDE.md -> AGENTS.md` 和 `.claude/skills -> ../.agents/skills`。这些链接只服务于 open-wot 仓库的开发与维护，不是 `wot agent init` 的安装结果；`wot agent init --client ...` 仍用于向其他项目安装 open-wot 提供的 MCP、Skill 和 Instructions。
+
+检出仓库时需要保留 Git 符号链接；不要通过对 open-wot 自身执行 `wot agent init` 来建立或验证这些链接。
+
 ### 安装与开发
 
 ```bash
