@@ -17,7 +17,6 @@ export default function Docs() {
   return (
     <>
       <div className="docs-site">
-        <div className="scan-lines" aria-hidden="true" />
         <a className="skip-link" href="#docs-content">
           跳到文档正文
         </a>

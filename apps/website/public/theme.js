@@ -22,20 +22,75 @@
     ]
   }
 
+  const channelLuminance = (channel) => {
+    const normalized = channel / 255
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4
+  }
+
+  const relativeLuminance = ([red, green, blue]) =>
+    0.2126 * channelLuminance(red)
+    + 0.7152 * channelLuminance(green)
+    + 0.0722 * channelLuminance(blue)
+
+  const contrastRatio = (foreground, background) => {
+    const foregroundLuminance = relativeLuminance(foreground)
+    const backgroundLuminance = relativeLuminance(background)
+    const lighter = Math.max(foregroundLuminance, backgroundLuminance)
+    const darker = Math.min(foregroundLuminance, backgroundLuminance)
+    return (lighter + 0.05) / (darker + 0.05)
+  }
+
+  const mixWithWhite = ([red, green, blue], amount) => [
+    Math.round(red + (255 - red) * amount),
+    Math.round(green + (255 - green) * amount),
+    Math.round(blue + (255 - blue) * amount),
+  ]
+
+  const rgbToHex = ([red, green, blue]) =>
+    `#${[red, green, blue].map(value => value.toString(16).padStart(2, '0')).join('')}`
+
+  const readableAccent = (rgb) => {
+    const docsBackgrounds = [hexToRgb('#0d1117'), hexToRgb('#151d27')]
+    const hasEnoughContrast = candidate =>
+      docsBackgrounds.every(background => contrastRatio(candidate, background) >= 4.5)
+
+    if (hasEnoughContrast(rgb))
+      return rgbToHex(rgb)
+
+    for (let amount = 0.05; amount <= 1; amount += 0.05) {
+      const candidate = mixWithWhite(rgb, amount)
+      if (hasEnoughContrast(candidate))
+        return rgbToHex(candidate)
+    }
+
+    return '#f6f8fa'
+  }
+
+  const contrastText = (background) => {
+    const dark = hexToRgb('#071109')
+    const light = hexToRgb('#f6f8fa')
+    return contrastRatio(dark, background) >= contrastRatio(light, background)
+      ? '#071109'
+      : '#f6f8fa'
+  }
+
   const applyAccent = (accent, persist = false) => {
     if (!hexPattern.test(accent))
       return
 
     const normalized = accent.toLowerCase()
-    const [red, green, blue] = hexToRgb(normalized)
+    const rgb = hexToRgb(normalized)
+    const [red, green, blue] = rgb
     const dim = `rgb(${Math.round(red * 0.64)} ${Math.round(green * 0.64)} ${Math.round(blue * 0.64)})`
-    const luminance = (red * 299 + green * 587 + blue * 114) / 1000
     const root = document.documentElement
 
     root.style.setProperty('--accent-green', normalized)
+    root.style.setProperty('--accent-readable', readableAccent(rgb))
     root.style.setProperty('--accent-rgb', `${red} ${green} ${blue}`)
     root.style.setProperty('--accent-dim', dim)
-    root.style.setProperty('--accent-contrast', luminance > 145 ? '#071109' : '#f6f8fa')
+    root.style.setProperty('--accent-contrast', contrastText(rgb))
 
     document.querySelectorAll('[data-theme-picker]').forEach((picker) => {
       picker.value = normalized

@@ -3,6 +3,7 @@
 :root {
   --bg-primary: #0d1117;
   --accent-green: #39d353;
+  --accent-readable: #39d353;
   --accent-rgb: 57 211 83;
   --accent-dim: #238636;
   --accent-contrast: #071109;
@@ -1750,34 +1751,25 @@ svg {
 }
 
 .docs-site {
-  --text-muted: #b8c4cf;
-  --border-color: #3a4652;
-  --code-bg: #151d27;
+  --docs-text-body: #c6d0da;
+  --docs-text-secondary: #a8b6c3;
+  --docs-text-subtle: #8d9ba8;
+  --docs-border: #3a4652;
+  --docs-code-bg: #151d27;
   min-height: 100vh;
   background:
     linear-gradient(90deg, rgb(var(--accent-rgb) / 0.02) 1px, transparent 1px),
     var(--bg-primary);
   background-size: 80px 80px;
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-}
-
-.docs-site .scan-lines {
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.045) 3px,
-    rgba(0, 0, 0, 0.045) var(--scan-line-gap)
-  );
+  font-family: var(--font-mono);
 }
 
 .docs-topbar {
   position: sticky;
   z-index: 200;
   top: 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--docs-border);
   background: rgba(13, 17, 23, 0.88);
   backdrop-filter: blur(18px);
   transition: border-color var(--ease), background var(--ease);
@@ -1802,12 +1794,12 @@ svg {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-size: 12px;
 }
 
 .docs-breadcrumb > span {
-  color: var(--border-color);
+  color: var(--docs-text-subtle);
 }
 
 .docs-breadcrumb strong {
@@ -1817,9 +1809,23 @@ svg {
 
 .docs-breadcrumb small {
   padding: 2px 7px;
-  border: 1px solid var(--border-color);
-  color: var(--accent-green);
+  border: 1px solid var(--docs-border);
+  color: var(--accent-readable);
   font-size: 10px;
+}
+
+.docs-site .brand,
+.docs-breadcrumb,
+.docs-nav-group > span,
+.docs-sidebar-meta,
+.doc-eyebrow,
+.doc-kicker,
+.doc-section-number,
+.doc-stats,
+.doc-code-head,
+.docs-toc,
+.docs-empty > span {
+  font-family: var(--font-mono);
 }
 
 .theme-picker-compact {
@@ -1830,6 +1836,14 @@ svg {
   justify-self: end;
 }
 
+.docs-site .theme-picker:hover,
+.docs-site .theme-picker:focus-within,
+.docs-site .theme-reset:not(:disabled):hover,
+.docs-site .theme-reset:not(:disabled):focus-visible,
+.docs-site .button-outline {
+  color: var(--accent-readable);
+}
+
 .docs-search {
   position: relative;
   display: flex;
@@ -1837,8 +1851,8 @@ svg {
   height: 40px;
   align-items: center;
   justify-self: center;
-  border: 1px solid var(--border-color);
-  background: var(--code-bg);
+  border: 1px solid var(--docs-border);
+  background: var(--docs-code-bg);
   transition: border-color var(--ease), box-shadow var(--ease);
 }
 
@@ -1850,7 +1864,7 @@ svg {
 .docs-search svg {
   width: 16px;
   margin-left: 13px;
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
 }
 
 .docs-search input {
@@ -1861,12 +1875,13 @@ svg {
   outline: 0;
   background: transparent;
   color: var(--text-primary);
-  font-family: inherit;
-  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
 }
 
 .docs-search input::placeholder {
-  color: #91a0ad;
+  color: var(--docs-text-subtle);
 }
 
 .docs-search kbd {
@@ -1874,10 +1889,10 @@ svg {
   width: 23px;
   height: 23px;
   place-items: center;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--docs-border);
   margin-right: 8px;
   background: #0d1117;
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-family: var(--font-mono);
   font-size: 11px;
 }
@@ -1886,7 +1901,7 @@ svg {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1894,7 +1909,7 @@ svg {
 }
 
 .docs-github:hover {
-  color: var(--accent-green);
+  color: var(--accent-readable);
 }
 
 .docs-github svg {
@@ -1907,8 +1922,8 @@ svg {
   height: 40px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-color);
-  background: var(--code-bg);
+  border: 1px solid var(--docs-border);
+  background: var(--docs-code-bg);
   color: var(--text-primary);
 }
 
@@ -1929,14 +1944,14 @@ svg {
   display: flex;
   height: calc(100vh - 70px);
   flex-direction: column;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--docs-border);
   background: rgba(13, 17, 23, 0.72);
 }
 
 .docs-sidebar-scroll {
   overflow-y: auto;
   padding: 30px 24px 45px;
-  scrollbar-color: var(--border-color) transparent;
+  scrollbar-color: var(--docs-border) transparent;
   scrollbar-width: thin;
 }
 
@@ -1948,7 +1963,7 @@ svg {
 
 .docs-nav-group > span {
   margin: 0 0 8px 11px;
-  color: #8f9daa;
+  color: var(--docs-text-subtle);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1958,7 +1973,7 @@ svg {
   position: relative;
   padding: 7px 11px;
   border-left: 1px solid transparent;
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-size: 13px;
   transition: color var(--ease), border-color var(--ease), background var(--ease);
 }
@@ -1967,13 +1982,13 @@ svg {
 .docs-nav-group a.is-active {
   border-left-color: var(--accent-green);
   background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.07), transparent);
-  color: var(--accent-green);
+  color: var(--accent-readable);
 }
 
 .docs-sidebar-meta {
   margin-top: auto;
   padding: 18px 24px 22px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--docs-border);
   background: rgba(8, 11, 15, 0.7);
 }
 
@@ -1985,7 +2000,7 @@ svg {
 
 .docs-sidebar-meta span {
   margin-bottom: 7px;
-  color: var(--accent-green);
+  color: var(--accent-readable);
 }
 
 .docs-sidebar-meta .status-dot {
@@ -1995,7 +2010,7 @@ svg {
 }
 
 .docs-sidebar-meta a {
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   transition: color var(--ease);
 }
 
@@ -2005,7 +2020,7 @@ svg {
 
 .docs-content {
   min-width: 0;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--docs-border);
 }
 
 .docs-article {
@@ -2016,7 +2031,7 @@ svg {
 .doc-section {
   position: relative;
   padding: 92px 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--docs-border);
   scroll-margin-top: 70px;
 }
 
@@ -2030,7 +2045,7 @@ svg {
 
 .doc-eyebrow,
 .doc-kicker {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.13em;
@@ -2056,15 +2071,17 @@ svg {
 }
 
 .doc-hero h1 span {
-  color: var(--accent-green);
+  color: var(--accent-readable);
 }
 
 .doc-hero > p {
-  max-width: 780px;
+  max-width: 760px;
   margin: 0;
-  color: var(--text-muted);
+  color: var(--docs-text-body);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: 17px;
-  line-height: 1.85;
+  line-height: 1.9;
 }
 
 .doc-hero-actions {
@@ -2077,8 +2094,8 @@ svg {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   margin-top: 72px;
-  border-top: 1px solid var(--border-color);
-  border-left: 1px solid var(--border-color);
+  border-top: 1px solid var(--docs-border);
+  border-left: 1px solid var(--docs-border);
 }
 
 .doc-stats > div {
@@ -2087,8 +2104,8 @@ svg {
   flex-direction: column;
   justify-content: center;
   padding: 18px 22px;
-  border-right: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--docs-border);
+  border-bottom: 1px solid var(--docs-border);
   background: rgba(22, 27, 34, 0.48);
 }
 
@@ -2100,7 +2117,7 @@ svg {
 }
 
 .doc-stats small {
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-size: 10px;
   letter-spacing: 0.06em;
 }
@@ -2121,10 +2138,12 @@ svg {
 
 .doc-section > p,
 .doc-lead {
-  max-width: 820px;
-  color: var(--text-muted);
+  max-width: 760px;
+  color: var(--docs-text-body);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: 16px;
-  line-height: 1.85;
+  line-height: 1.9;
 }
 
 .doc-section p code,
@@ -2133,15 +2152,17 @@ svg {
   padding: 1px 5px;
   border: 1px solid rgb(var(--accent-rgb) / 0.15);
   background: rgb(var(--accent-rgb) / 0.055);
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-family: var(--font-mono);
   font-size: 0.92em;
 }
 
 .doc-markdown {
-  color: var(--text-muted);
+  color: var(--docs-text-body);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: 16px;
-  line-height: 1.85;
+  line-height: 1.9;
   letter-spacing: 0.01em;
 }
 
@@ -2152,7 +2173,7 @@ svg {
 .doc-markdown p,
 .doc-markdown ul,
 .doc-markdown ol {
-  max-width: 74ch;
+  max-width: 760px;
 }
 
 .doc-markdown p {
@@ -2171,7 +2192,7 @@ svg {
 }
 
 .doc-markdown li::marker {
-  color: var(--accent-green);
+  color: var(--accent-readable);
 }
 
 .doc-markdown strong {
@@ -2179,7 +2200,7 @@ svg {
 }
 
 .doc-markdown a {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   text-decoration: underline;
   text-decoration-color: rgb(var(--accent-rgb) / 0.35);
   text-underline-offset: 4px;
@@ -2201,11 +2222,22 @@ svg {
   font-size: 16px;
 }
 
+.doc-markdown code,
+.doc-markdown pre,
+.doc-code,
+.doc-command-list code,
+.doc-option-grid code,
+.doc-tool-list code,
+.doc-table code,
+.docs-search kbd {
+  font-family: var(--font-mono);
+}
+
 .doc-markdown hr {
   height: 1px;
   border: 0;
   margin: 46px 0;
-  background: var(--border-color);
+  background: var(--docs-border);
 }
 
 .doc-markdown > code,
@@ -2215,14 +2247,14 @@ svg {
   padding: 1px 5px;
   border: 1px solid rgb(var(--accent-rgb) / 0.15);
   background: rgb(var(--accent-rgb) / 0.055);
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-family: var(--font-mono);
   font-size: 0.92em;
 }
 
 .doc-markdown .doc-callout {
   max-width: 820px;
-  color: var(--text-muted);
+  color: var(--docs-text-body);
 }
 
 .doc-markdown .doc-callout p {
@@ -2230,7 +2262,7 @@ svg {
 }
 
 .doc-markdown details {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--docs-border);
 }
 
 .doc-markdown summary {
@@ -2248,9 +2280,9 @@ svg {
 .doc-callout {
   position: relative;
   padding: 20px 22px 20px 53px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--docs-border);
   margin: 26px 0;
-  background: var(--code-bg);
+  background: var(--docs-code-bg);
 }
 
 .doc-callout::before {
@@ -2280,7 +2312,7 @@ svg {
 }
 
 .doc-callout-warning::before {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   content: "!";
 }
 
@@ -2293,14 +2325,14 @@ svg {
 
 .doc-callout p {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--docs-text-body);
   font-size: 14px;
   line-height: 1.75;
 }
 
 .doc-code {
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--docs-border);
   margin: 28px 0;
   background: #080b0f;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
@@ -2312,12 +2344,12 @@ svg {
   align-items: center;
   justify-content: space-between;
   padding: 0 13px 0 17px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--code-bg);
+  border-bottom: 1px solid var(--docs-border);
+  background: var(--docs-code-bg);
 }
 
 .doc-code-head span {
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-size: 10px;
   letter-spacing: 0.08em;
 }
@@ -2326,7 +2358,7 @@ svg {
   padding: 4px 8px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--docs-text-secondary);
   font-family: var(--font-mono);
   font-size: 10px;
   transition: color var(--ease), border-color var(--ease);
@@ -2334,7 +2366,7 @@ svg {
 
 .doc-code-head button:hover {
   border-color: var(--accent-green);
-  color: var(--accent-green);
+  color: var(--accent-readable);
 }
 
 .doc-code pre {
@@ -2359,18 +2391,18 @@ svg {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
-  background: var(--border-color);
+  background: var(--docs-border);
 }
 
 .doc-capability-grid article,
 .doc-principles article {
   min-height: 190px;
   padding: 25px;
-  background: var(--code-bg);
+  background: var(--docs-code-bg);
 }
 
 .doc-capability-grid span {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 11px;
 }
 
@@ -2384,8 +2416,11 @@ svg {
 .doc-capability-grid p,
 .doc-principles p {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .doc-flow {
@@ -2395,15 +2430,15 @@ svg {
   justify-content: space-between;
   gap: 12px;
   padding: 26px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--docs-border);
   margin: 34px 0;
   background: #080b0f;
 }
 
 .doc-flow > div {
   padding: 12px 14px;
-  border: 1px solid var(--border-color);
-  background: var(--code-bg);
+  border: 1px solid var(--docs-border);
+  background: var(--docs-code-bg);
 }
 
 .doc-flow > div.is-core {
@@ -2418,7 +2453,7 @@ svg {
 
 .doc-flow span {
   margin-bottom: 5px;
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 9px;
 }
 
@@ -2428,7 +2463,7 @@ svg {
 }
 
 .doc-flow i {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 13px;
   font-style: normal;
 }
@@ -2447,7 +2482,7 @@ svg {
 
 .doc-table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--docs-border);
   margin: 28px 0;
 }
 
@@ -2462,20 +2497,22 @@ svg {
 .doc-table th,
 .doc-table td {
   padding: 14px 18px;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 12px;
+  border-bottom: 1px solid var(--docs-border);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
 }
 
 .doc-table th {
-  background: var(--code-bg);
-  color: #a0adba;
-  font-size: 10px;
+  background: var(--docs-code-bg);
+  color: var(--docs-text-secondary);
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
 }
 
 .doc-table td {
-  color: var(--text-muted);
+  color: var(--docs-text-body);
 }
 
 .doc-table td:first-child {
@@ -2484,12 +2521,12 @@ svg {
 }
 
 .doc-table code {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-family: var(--font-mono);
 }
 
 .doc-command-list {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--docs-border);
   margin-top: 30px;
 }
 
@@ -2499,12 +2536,12 @@ svg {
   gap: 30px;
   align-items: center;
   padding: 17px 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--docs-border);
 }
 
 .doc-command-list code,
 .doc-tool-list code {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-family: var(--font-mono);
   font-size: 13px;
 }
@@ -2512,8 +2549,11 @@ svg {
 .doc-command-list p,
 .doc-tool-list p {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .doc-option-grid {
@@ -2528,20 +2568,22 @@ svg {
   flex-direction: column;
   justify-content: center;
   padding: 13px 16px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--docs-border);
   background: rgba(22, 27, 34, 0.55);
 }
 
 .doc-option-grid code {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-family: var(--font-mono);
   font-size: 11px;
 }
 
 .doc-option-grid small {
   margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 11px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
 }
 
 .doc-resolution {
@@ -2555,8 +2597,8 @@ svg {
 .doc-resolution > div {
   min-height: 130px;
   padding: 20px;
-  border: 1px solid var(--border-color);
-  background: var(--code-bg);
+  border: 1px solid var(--docs-border);
+  background: var(--docs-code-bg);
 }
 
 .doc-resolution span,
@@ -2567,7 +2609,7 @@ svg {
 
 .doc-resolution span,
 .doc-resolution > i {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 11px;
 }
 
@@ -2577,8 +2619,10 @@ svg {
 }
 
 .doc-resolution small {
-  color: var(--text-muted);
-  font-size: 10px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
 }
 
 .doc-resolution > i {
@@ -2590,13 +2634,13 @@ svg {
   grid-template-columns: repeat(2, 1fr);
   gap: 1px;
   margin-top: 32px;
-  background: var(--border-color);
+  background: var(--docs-border);
 }
 
 .doc-tool-list article {
   min-height: 115px;
   padding: 22px;
-  background: var(--code-bg);
+  background: var(--docs-code-bg);
 }
 
 .doc-tool-list p {
@@ -2612,11 +2656,11 @@ svg {
   grid-template-columns: 110px 1fr;
   gap: 26px;
   padding: 24px 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--docs-border);
 }
 
 .doc-safety-list article > span {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 10px;
   letter-spacing: 0.1em;
 }
@@ -2629,17 +2673,20 @@ svg {
 
 .doc-safety-list p {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .doc-faq {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--docs-border);
   margin-top: 30px;
 }
 
 .doc-faq details {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--docs-border);
 }
 
 .doc-faq summary {
@@ -2656,7 +2703,7 @@ svg {
   position: absolute;
   top: 18px;
   right: 3px;
-  color: var(--accent-green);
+  color: var(--accent-readable);
   content: "+";
   font-size: 16px;
 }
@@ -2669,8 +2716,10 @@ svg {
   max-width: 760px;
   padding: 0 0 23px;
   margin: 0;
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--docs-text-body);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
   line-height: 1.8;
 }
 
@@ -2686,7 +2735,7 @@ svg {
 }
 
 .doc-next span {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 10px;
 }
 
@@ -2697,8 +2746,10 @@ svg {
 
 .doc-next p {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
 }
 
 .docs-toc {
@@ -2711,7 +2762,7 @@ svg {
 .docs-toc > span {
   display: block;
   margin-bottom: 12px;
-  color: #8f9daa;
+  color: var(--docs-text-subtle);
   font-size: 10px;
   letter-spacing: 0.1em;
 }
@@ -2719,14 +2770,14 @@ svg {
 .docs-toc a {
   display: block;
   padding: 6px 0;
-  color: var(--text-muted);
-  font-size: 11px;
+  color: var(--docs-text-secondary);
+  font-size: 12px;
   transition: color var(--ease), transform var(--ease);
 }
 
 .docs-toc a:hover,
 .docs-toc a.is-active {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   transform: translateX(3px);
 }
 
@@ -2737,7 +2788,7 @@ svg {
 }
 
 .docs-empty span {
-  color: var(--accent-green);
+  color: var(--accent-readable);
   font-size: 12px;
 }
 
@@ -2748,8 +2799,10 @@ svg {
 
 .docs-empty p {
   margin: 0 auto;
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--docs-text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
 }
 
 .cursor-blink {
