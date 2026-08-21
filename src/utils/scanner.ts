@@ -2,6 +2,7 @@ import type { LintIssue, LintReport, UsageEntry, UsageReport } from '../types'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { parse } from '@vue/compiler-sfc'
+import { getComponentTags } from '../data/component-tags'
 import { findComponent, listComponents } from '../data/metadata'
 import { safeRelative, walkFiles } from './files'
 
@@ -36,7 +37,7 @@ function collectImports(scriptContent: string): string[] {
 export function analyzeUsage(targetDir: string, version?: string): UsageReport {
   const dir = resolve(targetDir)
   const files = walkFiles(dir, ['.vue'])
-  const knownByTag = new Map(listComponents(version).map(component => [component.tag.toLowerCase(), component]))
+  const knownByTag = new Map(listComponents(version).flatMap(component => getComponentTags(component).map(tag => [tag, component] as const)))
   const usageMap = new Map<string, UsageEntry>()
   const imports = new Set<string>()
 
@@ -51,7 +52,7 @@ export function analyzeUsage(targetDir: string, version?: string): UsageReport {
 
     for (const [tag, count] of collectTemplateTags(template)) {
       const known = knownByTag.get(tag)
-      const key = known?.name ?? tag
+      const key = known ? `${known.name}:${tag}` : tag
       const existing = usageMap.get(key)
       if (existing) {
         existing.count += count
@@ -80,6 +81,7 @@ export function lintProject(targetDir: string, version?: string): LintReport {
   const dir = resolve(targetDir)
   const files = walkFiles(dir, ['.vue'])
   const issues: LintIssue[] = []
+  const knownTags = new Set(listComponents(version).flatMap(getComponentTags))
 
   for (const file of files) {
     const source = readFileSync(file, 'utf8')
@@ -90,7 +92,7 @@ export function lintProject(targetDir: string, version?: string): LintReport {
       const tag = match[1]?.toLowerCase()
       if (!tag)
         continue
-      if (!findComponent(tag, version)) {
+      if (!knownTags.has(tag)) {
         issues.push({
           file: safeRelative(dir, file),
           line: getLineNumber(template, match.index ?? 0),
