@@ -1844,6 +1844,16 @@ svg {
   color: var(--accent-readable);
 }
 
+.docs-site .theme-picker:focus-within,
+.docs-site .theme-reset:not(:disabled):focus-visible,
+.docs-site .button:focus-visible,
+.docs-search:focus-within,
+.doc-code-head button:focus-visible {
+  border-color: var(--accent-readable);
+  outline: 2px solid var(--accent-readable);
+  outline-offset: 2px;
+}
+
 .docs-search {
   position: relative;
   display: flex;
@@ -1857,7 +1867,6 @@ svg {
 }
 
 .docs-search:focus-within {
-  border-color: var(--accent-green);
   box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.08);
 }
 
@@ -2366,6 +2375,11 @@ svg {
 
 .doc-code-head button:hover {
   border-color: var(--accent-green);
+  color: var(--accent-readable);
+}
+
+.doc-code-head button:focus-visible {
+  border-color: var(--accent-readable);
   color: var(--accent-readable);
 }
 
