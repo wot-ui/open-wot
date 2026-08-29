@@ -12,7 +12,6 @@
   --border-color: #30363d;
   --code-bg: #161b22;
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', 'PingFang SC', 'Microsoft YaHei', monospace;
-  --scan-line-gap: 4px;
   --cursor-speed: 1s;
   --shell: min(1400px, calc(100% - 48px));
   --ease: 150ms ease;
@@ -81,14 +80,6 @@ svg {
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-.scan-lines {
-  position: fixed;
-  z-index: 9996;
-  inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.11) 2px, rgba(0, 0, 0, 0.11) var(--scan-line-gap));
-  pointer-events: none;
 }
 
 .skip-link {
