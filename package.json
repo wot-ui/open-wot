@@ -71,6 +71,7 @@
     "commander": "catalog:cli",
     "jsonc-parser": "catalog:cli",
     "smol-toml": "catalog:cli",
+    "yaml": "catalog:cli",
     "zod": "catalog:cli"
   },
   "devDependencies": {

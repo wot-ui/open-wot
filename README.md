@@ -57,9 +57,9 @@ Instructions     AI 在生成代码前主动查询真实组件知识
 
 使用其他客户端时，只需替换 client id：
 
-| Claude Code | Cursor | VS Code | Codex | OpenCode | Antigravity |
-| --- | --- | --- | --- | --- | --- |
-| `claude` | `cursor` | `vscode` | `codex` | `opencode` | `antigravity` |
+| Claude Code | Cursor | VS Code | Codex | OpenCode | Antigravity | DeepSeek Harness |
+| --- | --- | --- | --- | --- | --- | --- |
+| `claude` | `cursor` | `vscode` | `codex` | `opencode` | `antigravity` | `deepseek`（需 `--scope user`） |
 
 同时使用多个 AI 客户端时，可以一次完成全部项目级配置：
 
@@ -68,7 +68,7 @@ wot agent init --client all
 wot agent doctor --client all --timeout 30000
 ```
 
-`--client all` 在 project scope 下会处理 Claude Code、Cursor、VS Code、Codex、OpenCode 和 Antigravity；在 user scope 下只处理支持用户级配置的客户端。
+`--client all` 在 project scope 下会处理 Claude Code、Cursor、VS Code、Codex、OpenCode 和 Antigravity；在 user scope 下只处理支持用户级配置的客户端，包括 DeepSeek Harness。DeepSeek 首版仅支持 user scope，省略 scope 时会提示显式添加 `--scope user`。
 
 配置完成后重启客户端；如果出现“信任项目”或“批准 MCP Server”的提示，请按客户端指引确认。
 
@@ -82,7 +82,7 @@ flowchart LR
   B --> C["CLI"]
   B --> D["MCP · 8 tools"]
   B --> E["Skills + Instructions"]
-  D --> F["Cursor · Claude Code · VS Code · Codex · OpenCode · Antigravity"]
+  D --> F["Cursor · Claude Code · VS Code · Codex · OpenCode · Antigravity · DeepSeek Harness"]
   E --> F
 ```
 
@@ -159,15 +159,43 @@ wot agent init --client claude --with skill,instructions
 
 1. 确认 Node.js >= 20。
 2. 安装或更新 `@wot-ui/cli@latest`；优先全局安装，不要使用 sudo。权限受限时改用 `npx -y @wot-ui/cli@latest` 执行后续命令。
-3. 识别当前客户端：Claude Code=claude、Cursor=cursor、VS Code=vscode、Codex=codex、OpenCode=opencode、Antigravity=antigravity。无法确定时先询问我。
-4. 执行 `wot agent init --client <client-id> --scope project --with mcp,skill,instructions --yes`。
-5. 执行 `wot agent doctor --client <client-id> --scope project --with mcp,skill,instructions`。
+3. 识别当前客户端：Claude Code=claude、Cursor=cursor、VS Code=vscode、Codex=codex、OpenCode=opencode、Antigravity=antigravity、DeepSeek Harness=deepseek。无法确定时先询问我。
+4. 选择 scope：DeepSeek Harness 使用 user，其他客户端使用 project。DeepSeek 请在 Git 项目根目录执行，或通过 --cwd 指定该根目录。执行 `wot agent init --client <client-id> --scope <scope> --with mcp,skill,instructions --yes`。
+5. 执行 `wot agent doctor --client <client-id> --scope <scope> --with mcp,skill,instructions`。
 6. 告诉我修改了哪些文件、doctor 结果，以及是否需要重启客户端或批准 MCP。
 
 请保留已有 MCP Server 和用户内容；如果安全检查失败，说明原因，不要绕过。
 ```
 
 </details>
+
+### DeepSeek Harness 接入
+
+DeepSeek Harness 首版仅支持用户级 MCP。请在项目根目录执行：
+
+```bash
+wot agent init --client deepseek --scope user --dry-run
+wot agent init --client deepseek --scope user --yes
+wot agent status --client deepseek --scope user
+wot agent doctor --client deepseek --scope user --timeout 30000
+wot agent remove --client deepseek --scope user --dry-run
+wot agent remove --client deepseek --scope user --yes
+```
+
+MCP 写入 `$DSH_HOME/cordis.patch.yml`，未设置或为空白时使用 `~/.dsh/cordis.patch.yml`。该用户层被多个 profiles 加载；`--client all --scope project` 不包含 DeepSeek。`--scope user` 仅控制 MCP 位置，Skill 仍安装到项目 `.agents/skills/wot-ui-v2`，Instructions 仍写入项目 `AGENTS.md` 的托管区块。
+
+DeepSeek 按最近的 `.git` 标记发现项目 Skill。若当前目录是 Git 子目录，请通过 `--cwd <项目根目录>` 安装和检查；只处理 MCP 可以加 `--with mcp`。这些项目资产也可能被其他 Agent 使用，移除它们会影响其他 Agent；用户修改过的 Skill 文件会保留。
+
+配置使用官方 `@deepseek-ai/dsh-mcp-client` 插件。open-wot 保留其他补丁、注释及标签，不执行 `!!js` 表达式；遇到非托管同名服务、修改过的托管条目、别名或无法安全编辑的 YAML 会报错并保留文件，需要先手动解决冲突。
+
+`doctor` 会检查配置及独立 MCP 握手；成功时的 `server-ready` 表示服务可用，尚未证明 DeepSeek 已加载。请在 **标准模式** 中重新加载配置或重启，确认并实际调用 `wot_status`、`wot_list`，加载 `wot-ui-v2` Skill，并确认 `AGENTS.md` 托管规则可见。自定义 profile 和极简模式可能缺少相关能力；DeepSeek 当前不支持 MCP prompt templates。
+
+只预览可合入用户配置的 YAML 补丁：
+
+```bash
+wot mcp print --client deepseek --scope user
+wot mcp print --client deepseek --scope user --pin
+```
 
 ## 在终端使用
 
@@ -251,7 +279,7 @@ wot mcp init --client all                 # 配置所有客户端
 wot mcp init --client codex --pin         # 固定当前 CLI 版本
 ```
 
-Claude Code、Cursor、Codex、OpenCode 和 Antigravity 支持 `--scope user`；VS Code 当前使用 project scope。OpenCode 会按配置优先级复用项目中已有的 `opencode.json[c]` 或 `.opencode/opencode.json[c]`，用户配置写入 `~/.config/opencode/opencode.json`；Antigravity 写入 `~/.gemini/config/mcp_config.json`。`doctor` 会验证配置和真实 MCP handshake，并在客户端支持时继续检查注册状态；Antigravity 没有稳定的非交互式状态命令，因此会提示在客户端内执行 `/mcp` 确认。
+Claude Code、Cursor、Codex、OpenCode、Antigravity 和 DeepSeek Harness 支持 `--scope user`；VS Code 当前使用 project scope。OpenCode 会按配置优先级复用项目中已有的 `opencode.json[c]` 或 `.opencode/opencode.json[c]`，用户配置写入 `~/.config/opencode/opencode.json`；Antigravity 写入 `~/.gemini/config/mcp_config.json`。`doctor` 会验证配置和真实 MCP handshake，并在客户端支持时继续检查注册状态；Antigravity 没有稳定的非交互式状态命令，因此会提示在客户端内执行 `/mcp` 确认。
 
 Agent 接入时，OpenCode 和 Antigravity 都复用 `.agents/skills/wot-ui-v2` 与项目根目录的 `AGENTS.md`；Antigravity 1.20.5 及以上版本会读取其中的项目规则。
 

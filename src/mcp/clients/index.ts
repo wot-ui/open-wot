@@ -3,6 +3,7 @@ import { antigravityAdapter } from './antigravity'
 import { claudeAdapter } from './claude'
 import { codexAdapter } from './codex'
 import { cursorAdapter } from './cursor'
+import { deepseekAdapter } from './deepseek'
 import { opencodeAdapter } from './opencode'
 import { vscodeAdapter } from './vscode'
 
@@ -13,6 +14,7 @@ export const mcpClientAdapters: McpClientAdapter[] = [
   codexAdapter,
   opencodeAdapter,
   antigravityAdapter,
+  deepseekAdapter,
 ]
 
 export function getMcpClientAdapter(id: McpClientId): McpClientAdapter {

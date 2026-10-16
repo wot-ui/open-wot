@@ -54,6 +54,9 @@ catalogs:
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
+    yaml:
+      specifier: 2.9.0
+      version: 2.9.0
     zod:
       specifier: ^4.1.12
       version: 4.3.6
@@ -141,6 +144,9 @@ importers:
       smol-toml:
         specifier: catalog:cli
         version: 1.7.0
+      yaml:
+        specifier: catalog:cli
+        version: 2.9.0
       zod:
         specifier: catalog:cli
         version: 4.3.6

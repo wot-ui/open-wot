@@ -49,6 +49,8 @@ export async function detectMcpClients(options: McpOperationOptions = {}): Promi
 export async function resolveMcpAdapters(client: McpClientId | 'auto' | 'all', options: McpOperationOptions = {}): Promise<McpClientAdapter[]> {
   if (client === 'all')
     return mcpClientAdapters.filter(adapter => adapter.supportedScopes.includes(options.scope ?? 'project'))
+  if (client === 'deepseek' && (options.scope ?? 'project') !== 'user')
+    throw new Error('DeepSeek Harness does not support project scope. Use --client deepseek --scope user.')
   if (client !== 'auto')
     return [getMcpClientAdapter(client)]
 
