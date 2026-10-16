@@ -1,7 +1,7 @@
 import type { PlanContext } from '../../src/mcp/clients/types'
 import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 import { applyChangePlan, toPublicChangePlan } from '../../src/application/change-plan'
@@ -87,11 +87,11 @@ describe('deepSeek YAML patches', () => {
 })
 
 describe('deepSeek adapter', () => {
-  it.each([undefined, '', '  ', '~/custom', '~', 'relative', '/tmp/open-wot-dsh-home'])('resolves DSH_HOME %j without writing', async (home) => {
+  it.each([undefined, '', '  ', '~/custom', '~', 'relative', '/tmp/open-wot-dsh-home', join(tmpdir(), 'open-wot-dsh-native-home')])('resolves DSH_HOME %j without writing', async (home) => {
     const context = await setup()
     context.env = { PATH: '', ...(home === undefined ? {} : { DSH_HOME: home }) }
     const detected = await deepseekAdapter.detect(context)
-    const base = !home?.trim() ? join(context.homeDir, '.dsh') : home === '~' ? context.homeDir : home.startsWith('~/') ? join(context.homeDir, home.slice(2)) : home.startsWith('/') ? home : join(context.cwd, home)
+    const base = !home?.trim() ? join(context.homeDir, '.dsh') : home === '~' ? context.homeDir : home.startsWith('~/') ? join(context.homeDir, home.slice(2)) : resolve(context.cwd, home)
     expect(detected.configLocations).toContain(join(base, 'cordis.patch.yml'))
     expect(detected.supportedScopes).toEqual(['project', 'user'])
   })

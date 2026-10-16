@@ -22,8 +22,9 @@ afterEach(async () => {
   await Promise.all(dirs.splice(0).map(path => rm(path, { recursive: true, force: true })))
 })
 const server = createMcpServerDefinition()
-const config = { schemaVersion: 1 as const, bridgeHash: 'a'.repeat(64), projects: [{ root: '/project', digest: 'b'.repeat(64) }] }
-const bridge = '/home/open-wot/project-bridge.mjs'
+const fixtureRoot = join(tmpdir(), 'open-wot-registry-fixture')
+const config = { schemaVersion: 1 as const, bridgeHash: 'a'.repeat(64), projects: [{ root: join(fixtureRoot, 'project'), digest: 'b'.repeat(64) }] }
+const bridge = join(fixtureRoot, 'home/open-wot/project-bridge.mjs')
 
 describe('project declarations and registry', () => {
   it.each([undefined, '1.1.0', 'next', '2.0.0-rc.1'])('accepts fixed package versions %j', (pin) => {
@@ -48,7 +49,7 @@ describe('project declarations and registry', () => {
     const installed = editProjectBridge(source, bridge, config)
     expect(inspectProjectBridge(installed, bridge)).toEqual(config)
     expect(editProjectBridge(installed, bridge, config)).toBe(installed)
-    const updated = editProjectBridge(installed, bridge, { ...config, projects: [...config.projects, { root: '/other', digest: 'c'.repeat(64) }] })
+    const updated = editProjectBridge(installed, bridge, { ...config, projects: [...config.projects, { root: join(fixtureRoot, 'other'), digest: 'c'.repeat(64) }] })
     expect(inspectProjectBridge(updated, bridge)?.projects).toHaveLength(2)
     const removed = editProjectBridge(updated, bridge)
     expect(inspectProjectBridge(removed, bridge)).toBeUndefined()
