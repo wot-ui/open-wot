@@ -10,6 +10,29 @@ import { createDetectContext, planMcpInstall, planMcpRemove } from './mcp-onboar
 
 export type AgentCapability = 'mcp' | 'skill' | 'instructions'
 
+export async function agentSkillLocationProblem(projectDir: string, client: McpClientId): Promise<string | undefined> {
+  if (client !== 'deepseek')
+    return undefined
+  const cwd = resolve(projectDir)
+  let current = cwd
+  while (true) {
+    if (await exists(join(current, '.git')))
+      return current === cwd ? undefined : `DeepSeek discovers project Skills at the Git root. Retry with --cwd ${JSON.stringify(current)}.`
+    const parent = dirname(current)
+    if (parent === current)
+      return undefined
+    current = parent
+  }
+}
+
+async function assertSkillLocation(options: AgentPlanOptions, cwd: string): Promise<void> {
+  if (!options.capabilities.includes('skill'))
+    return
+  const problem = await agentSkillLocationProblem(cwd, options.client)
+  if (problem)
+    throw new Error(problem)
+}
+
 const INSTRUCTIONS_START = '<!-- open-wot agent instructions start -->'
 const INSTRUCTIONS_END = '<!-- open-wot agent instructions end -->'
 
@@ -210,6 +233,7 @@ export interface AgentPlanOptions extends McpOperationOptions {
 
 export async function planAgentInit(options: AgentPlanOptions): Promise<ChangePlan> {
   const context = createDetectContext(options)
+  await assertSkillLocation(options, context.cwd)
   const plans: ChangePlan[] = []
   if (options.capabilities.includes('mcp'))
     plans.push(...await planMcpInstall(options.client, options))
@@ -222,6 +246,7 @@ export async function planAgentInit(options: AgentPlanOptions): Promise<ChangePl
 
 export async function planAgentRemove(options: AgentPlanOptions): Promise<ChangePlan> {
   const context = createDetectContext(options)
+  await assertSkillLocation(options, context.cwd)
   const plans: ChangePlan[] = []
   if (options.capabilities.includes('mcp'))
     plans.push(...await planMcpRemove(options.client, options))
@@ -229,7 +254,10 @@ export async function planAgentRemove(options: AgentPlanOptions): Promise<Change
     plans.push(await planSkillRemove(context.cwd, options.client))
   if (options.capabilities.includes('instructions'))
     plans.push(await planInstructions(context.cwd, options.client, true))
-  return mergeChangePlans(`Remove wot-ui Agent integration for ${options.client}`, plans)
+  const plan = mergeChangePlans(`Remove wot-ui Agent integration for ${options.client}`, plans)
+  if (options.client === 'deepseek' && options.capabilities.some(capability => capability !== 'mcp'))
+    plan.warnings.push('Project Skills and AGENTS.md instructions are shared with other agents; removing them affects those agents too.')
+  return plan
 }
 
 export async function inspectAgentSkill(projectDir: string, client: McpClientId): Promise<{ installed: boolean, matches: boolean }> {

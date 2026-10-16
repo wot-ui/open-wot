@@ -52,6 +52,7 @@ catalogs:
     tsdown: ^0.17.3
     tsx: ^4.21.0
     typescript: ^5.9.3
+    yaml: 2.9.0
     zod: ^4.1.12
   inlined:
     '@antfu/utils': ^9.3.0
