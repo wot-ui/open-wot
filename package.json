@@ -36,6 +36,7 @@
   "files": [
     "data",
     "dist",
+    "runtime/*.mjs",
     "skills/wot-ui-cli",
     "skills/wot-ui-v2"
   ],

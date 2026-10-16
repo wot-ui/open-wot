@@ -1,8 +1,11 @@
 import type { ChangePlan, ClientConfigState, DetectContext, McpClientAdapter, PlanContext } from './types'
-import { access, readFile } from 'node:fs/promises'
+import { access } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { editDeepseekConfig, inspectDeepseekConfig, printDeepseekConfig } from './deepseek-config'
+import { detectDesktop } from './deepseek-desktop'
+import { bridgePath, inspectProject, planProject, printProject, readOptional } from './deepseek-project'
+import { inspectProjectBridge } from './deepseek-project-config'
 import { findExecutable } from './detect'
 
 function dshHome(context: DetectContext): string {
@@ -17,26 +20,13 @@ function configPath(context: DetectContext): string {
   return join(dshHome(context), 'cordis.patch.yml')
 }
 
-function assertScope(context: PlanContext): void {
-  if (context.scope !== 'user')
-    throw new Error('DeepSeek Harness does not support project scope. Use --client deepseek --scope user.')
-}
-
-async function readOptional(path: string): Promise<string | undefined> {
-  try {
-    return await readFile(path, 'utf8')
-  }
-  catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-      return undefined
-    throw error
-  }
-}
-
 async function plan(context: PlanContext, remove: boolean): Promise<ChangePlan> {
-  assertScope(context)
+  if (context.scope === 'project')
+    return planProject(context, dshHome(context), remove)
   const path = configPath(context)
   const before = await readOptional(path)
+  if (!remove && inspectProjectBridge(before ?? '', bridgePath(dshHome(context)))?.projects.length)
+    throw new Error('Project registrations conflict with global wot-ui; remove each project MCP registration before using --scope user')
   const after = editDeepseekConfig(before ?? '', remove ? undefined : context.server)
   const changed = (before ?? '') !== after
   return {
@@ -61,20 +51,25 @@ async function plan(context: PlanContext, remove: boolean): Promise<ChangePlan> 
 export const deepseekAdapter: McpClientAdapter = {
   id: 'deepseek',
   displayName: 'DeepSeek Harness',
-  supportedScopes: ['user'],
+  supportedScopes: ['project', 'user'],
   async detect(context) {
     const path = configPath(context)
     const executable = await findExecutable(['dsh'], context)
     const exists = await access(path).then(() => true).catch(() => false)
-    return { client: this.id, displayName: this.displayName, installed: Boolean(executable) || exists, ...(executable ? { executable } : {}), supportedScopes: this.supportedScopes, configLocations: [path], preferredMethod: 'config-file' }
+    const desktop = await detectDesktop(context)
+    const project = await access(join(context.cwd, '.dsh/wot-ui.json')).then(() => true).catch(() => false)
+    return { client: this.id, displayName: this.displayName, installed: Boolean(executable) || exists || desktop || project, ...(executable ? { executable } : {}), supportedScopes: this.supportedScopes, configLocations: [join(context.cwd, '.dsh/wot-ui.json'), path, bridgePath(dshHome(context))], preferredMethod: 'config-file' }
   },
   async inspect(context) {
-    assertScope(context)
+    if (context.scope === 'project')
+      return inspectProject(context, dshHome(context))
     const path = configPath(context)
     const content = await readOptional(path)
     const state: ClientConfigState = { client: this.id, displayName: this.displayName, scope: context.scope, path, exists: content !== undefined, configured: false, matches: false }
     try {
       const server = inspectDeepseekConfig(content ?? '')
+      if (server && inspectProjectBridge(content ?? '', bridgePath(dshHome(context)))?.projects.length)
+        throw new Error('Global wot-ui conflicts with existing project registrations')
       return { ...state, configured: Boolean(server), matches: Boolean(server) && JSON.stringify(server) === JSON.stringify(context.server), ...(server ? { server } : {}) }
     }
     catch (error) {
@@ -84,7 +79,8 @@ export const deepseekAdapter: McpClientAdapter = {
   planInstall: context => plan(context, false),
   planRemove: context => plan(context, true),
   async print(context) {
-    assertScope(context)
+    if (context.scope === 'project')
+      return printProject(context.server)
     return printDeepseekConfig(context.server)
   },
   async verifyRegistration() {

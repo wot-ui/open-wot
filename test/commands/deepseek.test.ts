@@ -50,8 +50,8 @@ describe('deepSeek CLI', () => {
     await run(['agent', 'remove', ...options, '--yes'])
     expect(JSON.parse(joinedStdout(stdout)).plan.changes).toEqual([])
     await run(['agent', 'init', '--client', 'deepseek', '--cwd', cwd, '--format', 'json', '--yes'])
-    expect(process.exitCode).toBe(1)
-    expect(joinedStdout(stdout)).toContain('--scope user')
+    expect(process.exitCode).toBeUndefined()
+    expect(await readFile(join(cwd, '.dsh/wot-ui.json'), 'utf8')).toContain('schemaVersion')
   })
 
   it('requires confirmation in noninteractive sessions and reports Skill root issues', async () => {

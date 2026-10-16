@@ -92,8 +92,8 @@ describe('deepSeek adapter', () => {
     context.env = { PATH: '', ...(home === undefined ? {} : { DSH_HOME: home }) }
     const detected = await deepseekAdapter.detect(context)
     const base = !home?.trim() ? join(context.homeDir, '.dsh') : home === '~' ? context.homeDir : home.startsWith('~/') ? join(context.homeDir, home.slice(2)) : home.startsWith('/') ? home : join(context.cwd, home)
-    expect(detected.configLocations).toEqual([join(base, 'cordis.patch.yml')])
-    expect(detected.supportedScopes).toEqual(['user'])
+    expect(detected.configLocations).toContain(join(base, 'cordis.patch.yml'))
+    expect(detected.supportedScopes).toEqual(['project', 'user'])
   })
 
   it('detects dsh or an existing patch file, and respects scopes', async () => {
@@ -106,9 +106,9 @@ describe('deepSeek adapter', () => {
     await applyChangePlan(await deepseekAdapter.planInstall(context))
     expect((await deepseekAdapter.detect(context)).installed).toBe(true)
     expect((await resolveMcpAdapters('all', context)).map(item => item.id)).toContain('deepseek')
-    expect((await resolveMcpAdapters('all', { ...context, scope: 'project' })).map(item => item.id)).not.toContain('deepseek')
+    expect((await resolveMcpAdapters('all', { ...context, scope: 'project' })).map(item => item.id)).toContain('deepseek')
     expect((await resolveMcpAdapters('auto', context)).map(item => item.id)).toEqual(['deepseek'])
-    await expect(resolveMcpAdapters('deepseek', { ...context, scope: 'project' })).rejects.toThrow('--scope user')
+    expect(await resolveMcpAdapters('deepseek', { ...context, scope: 'project' })).toEqual([deepseekAdapter])
   })
 
   it('installs in a missing root outside home and removes only its entry', async () => {

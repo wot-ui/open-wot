@@ -102,8 +102,8 @@ describe('deepSeek Agent integration', () => {
     { ok: true, tools: ['wot_status', 'wot_list'], overall: 'server-ready' },
     { ok: true, tools: ['wot_status'], overall: 'failed' },
     { ok: false, tools: [], overall: 'failed' },
-  ])('does not claim runtime registration for $overall', async ({ ok, tools, overall }) => {
-    const options = await setup()
+  ].flatMap(result => ['user', 'project'].map(scope => ({ ...result, scope: scope as 'user' | 'project' }))))('does not claim runtime registration for $scope $overall', async ({ ok, tools, overall, scope }) => {
+    const options = { ...await setup(), scope }
     await applyChangePlan(await deepseekAdapter.planInstall(createPlanContext(options)))
     vi.mocked(verifyMcpHandshake).mockResolvedValue({ ok, tools, serverName: 'wot-ui', durationMs: 1, ...ok ? {} : { error: 'timeout' } })
     const [report] = await doctorMcpClients('deepseek', options)

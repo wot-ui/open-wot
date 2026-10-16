@@ -21,7 +21,7 @@ function conflict(): never {
   throw new Error('Conflicting or modified DeepSeek wot-ui configuration; preserve it and resolve the open-wot-mcp / wot-ui entries manually.')
 }
 
-function hasKeys(node: YAMLMap, keys: string[]): boolean {
+export function hasKeys(node: YAMLMap, keys: string[]): boolean {
   return node.items.length === keys.length && keys.every(key => node.has(key))
 }
 
@@ -105,13 +105,13 @@ export function inspectDeepseekConfig(source: string): McpServerDefinition | und
 
 interface Edit { start: number, end: number, text: string }
 
-function editSource(source: string, edits: Edit[]): string {
+export function editSource(source: string, edits: Edit[]): string {
   for (const edit of edits.sort((a, b) => b.start - a.start))
     source = source.slice(0, edit.start) + edit.text + source.slice(edit.end)
   return source
 }
 
-function comments(token: unknown): string[] {
+export function comments(token: unknown): string[] {
   if (!token || typeof token !== 'object')
     return []
   const value = token as Record<string, unknown>
