@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -23,17 +23,51 @@ async function fixture() {
 }
 
 describe('multi-client location handling', () => {
-  it('installs and removes the other six project clients from a Git subdirectory', async () => {
+  it.each(['project', 'user'] as const)('refuses to shadow CodeBuddy legacy %s configuration before any writes', async (scope) => {
+    const options = { ...await fixture(), scope }
+    const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')
+    const original = '{"mcpServers":{"existing":{"command":"existing","args":[]}}}'
+    await writeFile(legacy, original)
+    await expect(planMcpInstall('all', options)).rejects.toThrow('would hide existing CodeBuddy CLI configuration')
+    await expect(planMcpInstall('codebuddy', options)).rejects.toThrow('would hide existing CodeBuddy CLI configuration')
+    expect(await readFile(legacy, 'utf8')).toBe(original)
+    expect(await readdir(options.cwd)).toEqual(scope === 'project' ? ['mcp.json'] : [])
+    expect(await readdir(options.homeDir)).toEqual(scope === 'user' ? ['.codebuddy.json'] : [])
+
+    // Unrelated clients remain usable; explicit CLI onboarding retains the legacy file.
+    await expect(planMcpInstall('cursor', options)).resolves.toHaveLength(1)
+    await applyChangePlan(mergeChangePlans('CLI install', await planMcpInstall('codebuddy-cli', options)))
+    expect(await readFile(legacy, 'utf8')).toContain('wot-ui')
+    expect((await planMcpInstall('codebuddy-cli', options))[0].changes).toEqual([])
+    await applyChangePlan(mergeChangePlans('CLI remove', await planMcpRemove('codebuddy-cli', options)))
+    expect(JSON.parse(await readFile(legacy, 'utf8'))).toEqual(JSON.parse(original))
+  })
+
+  it('allows all when creating an IDE file cannot shadow the active CLI user file', async () => {
+    const options = { ...await fixture(), scope: 'user' as const }
+    await mkdir(join(options.homeDir, '.codebuddy'))
+    const active = join(options.homeDir, '.codebuddy', '.mcp.json')
+    const legacy = join(options.homeDir, '.codebuddy.json')
+    await writeFile(active, '{"mcpServers":{"existing":{"command":"existing","args":[]}}}')
+    await writeFile(legacy, '{"legacy":true}')
+    await applyChangePlan(mergeChangePlans('All', await planMcpInstall('all', options)))
+    expect(Object.keys(JSON.parse(await readFile(active, 'utf8')).mcpServers)).toEqual(['existing', 'wot-ui'])
+    expect(await readFile(legacy, 'utf8')).toBe('{"legacy":true}')
+    await applyChangePlan(mergeChangePlans('Remove all', await planMcpRemove('all', options)))
+    expect(Object.keys(JSON.parse(await readFile(active, 'utf8')).mcpServers)).toEqual(['existing'])
+  })
+
+  it('installs and removes the other project clients from a Git subdirectory', async () => {
     const options = await fixture()
     const plans = await planMcpInstall('all', options)
-    expect(plans).toHaveLength(7)
+    expect(plans).toHaveLength(11)
     const skipped = plans.find(plan => plan.id === 'deepseek-skipped-location')!
     expect(skipped.changes).toEqual([])
     expect(skipped.warnings[0]).toContain('Skipped DeepSeek: Run from the Git root')
-    expect(plans.filter(plan => plan.changes.length)).toHaveLength(6)
+    expect(plans.filter(plan => plan.changes.length)).toHaveLength(10)
     await applyChangePlan(mergeChangePlans('Install all', plans))
     const remove = await planMcpRemove('all', options)
-    expect(remove.filter(plan => plan.changes.length)).toHaveLength(6)
+    expect(remove.filter(plan => plan.changes.length)).toHaveLength(10)
     expect(remove.find(plan => plan.id === skipped.id)).toEqual(skipped)
     await applyChangePlan(mergeChangePlans('Remove all', remove))
   })

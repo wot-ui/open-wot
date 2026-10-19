@@ -41,6 +41,30 @@ describe('mcp command', () => {
     expect(startMcpServer).toHaveBeenCalledOnce()
   })
 
+  it.each(['qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'])('runs the %s MCP lifecycle with stable text and JSON output', async (client) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-new-mcp-command-'))
+    directories.push(cwd)
+    const invoke = async (args: string[]) => {
+      stdout.mockClear()
+      const program = new Command()
+      registerMcpCommand(program)
+      await runCli(program, ['mcp', ...args, '--client', client, '--cwd', cwd])
+      expect(process.exitCode).toBeUndefined()
+      return joinedStdout(stdout)
+    }
+    const printed = JSON.parse(await invoke(['print', '--pin', '1.2.3']))
+    expect(printed.mcpServers['wot-ui'].args).toContain('@wot-ui/cli@1.2.3')
+    const preview = JSON.parse(await invoke(['init', '--dry-run', '--format', 'json']))
+    expect(preview.dryRun).toBe(true)
+    expect(preview.plan.changes).toHaveLength(1)
+    await expect(readFile(join(cwd, '.mcp.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(await invoke(['init', '--yes'])).toContain('mcpServers.wot-ui')
+    expect(await invoke(['init', '--yes'])).toContain('No changes required')
+    expect(await invoke(['status', '--format', 'json'])).toContain('"matches": true')
+    expect(await invoke(['remove', '--yes'])).toContain('shared')
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
+  })
+
   it('previews and idempotently writes Cursor config', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'open-wot-command-'))
     directories.push(cwd)

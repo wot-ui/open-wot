@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Command } from 'commander'
@@ -12,6 +12,42 @@ describe('agent command', () => {
 
   afterEach(async () => {
     await Promise.all(directories.splice(0).map(path => rm(path, { recursive: true, force: true })))
+  })
+
+  it.each([['--dry-run'], ['--yes']])('rejects all before writing MCP or assets when legacy CodeBuddy configuration would be hidden (%s)', async (flag) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-agent-legacy-'))
+    directories.push(cwd)
+    const original = '{"mcpServers":{"existing":{"command":"existing","args":[]}}}'
+    await writeFile(join(cwd, 'mcp.json'), original)
+    const program = new Command()
+    registerAgentCommand(program)
+    await runCli(program, ['agent', 'init', '--client', 'all', '--cwd', cwd, flag, '--format', 'json'])
+    expect(process.exitCode).toBe(1)
+    expect(joinedStdout(stdout)).toContain('would hide existing CodeBuddy CLI configuration')
+    expect(await readdir(cwd)).toEqual(['mcp.json'])
+    expect(await readFile(join(cwd, 'mcp.json'), 'utf8')).toBe(original)
+  })
+
+  it.each(['qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'])('supports %s Agent dry-run, status and removal', async (client) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-new-agent-command-'))
+    directories.push(cwd)
+    const invoke = async (args: string[]) => {
+      stdout.mockClear()
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', ...args, '--client', client, '--cwd', cwd])
+      expect(process.exitCode).toBeUndefined()
+      return joinedStdout(stdout)
+    }
+    const preview = JSON.parse(await invoke(['init', '--dry-run', '--format', 'json']))
+    expect(preview.dryRun).toBe(true)
+    await expect(readFile(join(cwd, '.mcp.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    await invoke(['init', '--yes'])
+    expect(await invoke(['status'])).toContain(`ok ${client}: mcp=pass skill=pass instructions=pass`)
+    const reports = JSON.parse(await invoke(['doctor', '--with', 'skill,instructions', '--format', 'json']))
+    expect(reports.clients[0].capabilities).toMatchObject({ mcp: { status: 'skipped' }, skill: { status: 'pass' }, instructions: { status: 'pass' } })
+    await invoke(['remove', '--yes'])
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
   })
 
   it('installs Skill and instructions without MCP when requested', async () => {

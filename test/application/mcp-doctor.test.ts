@@ -6,6 +6,7 @@ import { applyChangePlan } from '../../src/application/change-plan'
 import { doctorMcpClients, formatMcpDoctorReport, mcpDoctorExitCode, toPublicMcpDoctorReport, validateMcpHandshake } from '../../src/application/mcp-doctor'
 import { verifyMcpHandshake } from '../../src/application/mcp-handshake'
 import { createPlanContext } from '../../src/application/mcp-onboarding'
+import { getMcpClientAdapter } from '../../src/mcp/clients'
 import { codexAdapter } from '../../src/mcp/clients/codex'
 import { cursorAdapter } from '../../src/mcp/clients/cursor'
 
@@ -23,6 +24,15 @@ afterEach(async () => {
 })
 
 describe('mcp doctor', () => {
+  it.each(['qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'] as const)('reports %s server readiness independently from client registration', async (client) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-new-doctor-'))
+    directories.push(cwd)
+    const context = createPlanContext({ cwd, homeDir: cwd, env: { PATH: '' } })
+    await applyChangePlan(await getMcpClientAdapter(client).planInstall(context))
+    vi.mocked(verifyMcpHandshake).mockResolvedValue({ ok: true, serverName: 'wot-ui', tools: ['wot_status', 'wot_list'], durationMs: 1 })
+    const [report] = await doctorMcpClients(client, { cwd, homeDir: cwd, env: { PATH: '' } })
+    expect(report).toMatchObject({ overall: 'server-ready', config: { status: 'pass' }, handshake: { status: 'pass' }, clientRegistration: { status: 'unsupported' } })
+  })
   it('requires the wot-ui server identity and core tools', () => {
     expect(validateMcpHandshake({
       ok: true,

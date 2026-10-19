@@ -1,4 +1,4 @@
-export const MCP_CLIENT_IDS = ['claude', 'cursor', 'vscode', 'codex', 'opencode', 'antigravity', 'deepseek'] as const
+export const MCP_CLIENT_IDS = ['claude', 'cursor', 'vscode', 'codex', 'opencode', 'antigravity', 'deepseek', 'qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'] as const
 export const REQUIRED_WOT_MCP_TOOLS = ['wot_status', 'wot_list'] as const
 
 export type McpClientId = typeof MCP_CLIENT_IDS[number]

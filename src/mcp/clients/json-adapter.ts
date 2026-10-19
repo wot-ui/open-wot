@@ -9,7 +9,11 @@ interface JsonAdapterOptions {
   displayName: string
   executableNames: string[]
   supportedScopes: McpScope[]
-  configPath: (context: DetectContext, scope: McpScope) => string
+  configPath: (context: DetectContext, scope: McpScope) => string | Promise<string>
+  detectionPaths?: (context: DetectContext) => string[]
+  detectExecutable?: (context: DetectContext) => Promise<string | undefined>
+  allowedRoot?: (context: PlanContext) => string
+  removeWarning?: string
   serverKey: 'mcpServers' | 'servers'
   serverProblem?: (entry: unknown) => string | undefined
   verifyRegistration?: (context: PlanContext, state: ClientConfigState, options?: RegistrationCheckOptions) => Promise<ClientRegistrationState>
@@ -90,9 +94,11 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
   }
 
   async detect(context: DetectContext): Promise<ClientDetection> {
-    const configLocations = this.supportedScopes.map(scope => this.options.configPath(context, scope))
-    const executable = await findExecutable(this.options.executableNames, context)
-    const hasConfig = (await Promise.all(configLocations.map(async (path) => {
+    const configLocations = await Promise.all(this.supportedScopes.map(scope => this.options.configPath(context, scope)))
+    const executable = this.options.detectExecutable
+      ? await this.options.detectExecutable(context)
+      : await findExecutable(this.options.executableNames, context)
+    const hasConfig = (await Promise.all((this.options.detectionPaths?.(context) ?? configLocations).map(async (path) => {
       try {
         await access(path)
         return true
@@ -115,7 +121,7 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
 
   async inspect(context: PlanContext): Promise<ClientConfigState> {
     this.assertScope(context.scope)
-    const path = this.options.configPath(context, context.scope)
+    const path = await this.options.configPath(context, context.scope)
     const content = await readOptional(path)
     if (content === undefined) {
       return {
@@ -169,7 +175,7 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
 
   async planInstall(context: PlanContext): Promise<ChangePlan> {
     this.assertScope(context.scope)
-    const path = this.options.configPath(context, context.scope)
+    const path = await this.options.configPath(context, context.scope)
     const before = await readOptional(path)
     const source = before?.trim() ? before : '{}\n'
     parseObject(source, path)
@@ -186,7 +192,7 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
         : [{
             type: 'write-file',
             path,
-            allowedRoot: context.scope === 'project' ? context.cwd : context.homeDir,
+            allowedRoot: this.options.allowedRoot?.(context) ?? (context.scope === 'project' ? context.cwd : context.homeDir),
             before,
             after,
             reason: `Add or update mcp server "wot-ui" under ${this.options.serverKey}`,
@@ -199,7 +205,7 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
 
   async planRemove(context: PlanContext): Promise<ChangePlan> {
     this.assertScope(context.scope)
-    const path = this.options.configPath(context, context.scope)
+    const path = await this.options.configPath(context, context.scope)
     const before = await readOptional(path)
     if (before === undefined) {
       return {
@@ -222,13 +228,13 @@ export class JsonMcpClientAdapter implements McpClientAdapter {
         : [{
             type: 'write-file',
             path,
-            allowedRoot: context.scope === 'project' ? context.cwd : context.homeDir,
+            allowedRoot: this.options.allowedRoot?.(context) ?? (context.scope === 'project' ? context.cwd : context.homeDir),
             before,
             after,
             reason: 'Remove only the wot-ui MCP server entry',
             preview: [`- ${this.options.serverKey}.wot-ui`],
           }],
-      warnings: [],
+      warnings: before !== after && this.options.removeWarning ? [this.options.removeWarning] : [],
       requiresConfirmation: before !== after,
     }
   }

@@ -152,6 +152,7 @@ export function registerAgentCommand(program: Command): void {
       const capabilities = parseCapabilities(options.with)
       const plans = await Promise.all(clients.map(client => planSelectedClient(parseClient(options.client), client, () => planAgentInit({
         client,
+        instructionClients: clients,
         capabilities,
         cwd: options.cwd,
         scope: parseScope(options.scope),

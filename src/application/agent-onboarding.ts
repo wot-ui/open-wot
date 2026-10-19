@@ -6,6 +6,7 @@ import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { DeepseekProjectLocationError } from '../../runtime/deepseek-project-bridge.mjs'
+import { MCP_CLIENT_IDS } from '../mcp/clients'
 import { mergeChangePlans } from './change-plan'
 import { createDetectContext, planMcpInstall, planMcpRemove } from './mcp-onboarding'
 
@@ -69,23 +70,38 @@ async function readOptional(path: string): Promise<string | undefined> {
   }
 }
 
+function skillDirectory(client: McpClientId): string {
+  if (client === 'claude')
+    return '.claude'
+  if (client === 'qoder' || client === 'qoder-cli')
+    return '.qoder'
+  if (client === 'codebuddy' || client === 'codebuddy-cli')
+    return '.codebuddy'
+  return '.agents'
+}
+
+function skillReference(client: McpClientId): string {
+  return `${skillDirectory(client)}/skills/wot-ui-v2/SKILL.md`
+}
+
 export function getSkillTarget(projectDir: string, client: McpClientId): string {
-  return client === 'claude'
-    ? resolve(projectDir, '.claude', 'skills', 'wot-ui-v2')
-    : resolve(projectDir, '.agents', 'skills', 'wot-ui-v2')
+  return resolve(projectDir, skillDirectory(client), 'skills', 'wot-ui-v2')
 }
 
 export function getInstructionsTarget(projectDir: string, client: McpClientId): string {
-  return resolve(projectDir, client === 'claude' ? 'CLAUDE.md' : 'AGENTS.md')
+  return resolve(projectDir, client === 'claude' ? 'CLAUDE.md' : client === 'codebuddy' || client === 'codebuddy-cli' ? 'CODEBUDDY.md' : 'AGENTS.md')
 }
 
-export function createAgentInstructions(client: McpClientId): string {
-  const skill = client === 'claude' ? '.claude/skills/wot-ui-v2/SKILL.md' : '.agents/skills/wot-ui-v2/SKILL.md'
+export function createAgentInstructions(client: McpClientId, references = [skillReference(client)]): string {
+  const skills = [...new Set(references)].sort()
+  const instruction = skills.length === 1
+    ? `read the project Skill at \`${skills[0]}\``
+    : `read the project Skill for your client at ${skills.map(skill => `\`${skill}\``).join(' or ')}`
   return [
     INSTRUCTIONS_START,
     '## Wot UI Agent Instructions',
     '',
-    `Before generating or modifying wot-ui component code, read the project Skill at \`${skill}\` and query the configured \`wot-ui\` MCP server for version-accurate APIs and examples.`,
+    `Before generating or modifying wot-ui component code, ${instruction} and query the configured \`wot-ui\` MCP server for version-accurate APIs and examples.`,
     '',
     INSTRUCTIONS_END,
   ].join('\n')
@@ -201,12 +217,18 @@ async function planSkillRemove(projectDir: string, client: McpClientId): Promise
   }
 }
 
-async function planInstructions(projectDir: string, client: McpClientId, remove: boolean): Promise<ChangePlan> {
+async function planInstructions(projectDir: string, client: McpClientId, remove: boolean, clients: McpClientId[] = [client]): Promise<ChangePlan> {
   const path = getInstructionsTarget(projectDir, client)
   const before = await readOptional(path)
+  const range = findManagedInstructionsRange(before ?? '')
+  const block = range ? before!.slice(range.start, range.end) : ''
+  const references = MCP_CLIENT_IDS
+    .filter(candidate => getInstructionsTarget(projectDir, candidate) === path)
+    .filter(candidate => clients.includes(candidate) || block.includes(`\`${skillReference(candidate)}\``))
+    .map(skillReference)
   const after = remove
     ? removeManagedInstructions(before ?? '')
-    : updateManagedInstructions(before ?? '', createAgentInstructions(client))
+    : updateManagedInstructions(before ?? '', createAgentInstructions(client, references))
   return {
     id: `${client}-instructions-${remove ? 'remove' : 'install'}`,
     summary: `${remove ? 'Remove' : 'Install'} managed Agent instructions for ${client}`,
@@ -230,6 +252,8 @@ export interface AgentPlanOptions extends McpOperationOptions {
   client: McpClientId
   capabilities: AgentCapability[]
   scope?: McpScope
+  /** Clients sharing the current transaction's Instructions files. */
+  instructionClients?: McpClientId[]
 }
 
 export async function planAgentInit(options: AgentPlanOptions): Promise<ChangePlan> {
@@ -241,7 +265,7 @@ export async function planAgentInit(options: AgentPlanOptions): Promise<ChangePl
   if (options.capabilities.includes('skill'))
     plans.push(await planSkillInstall(context.cwd, options.client))
   if (options.capabilities.includes('instructions'))
-    plans.push(await planInstructions(context.cwd, options.client, false))
+    plans.push(await planInstructions(context.cwd, options.client, false, options.instructionClients))
   return mergeChangePlans(`Initialize wot-ui Agent integration for ${options.client}`, plans)
 }
 
@@ -258,6 +282,8 @@ export async function planAgentRemove(options: AgentPlanOptions): Promise<Change
   const plan = mergeChangePlans(`Remove wot-ui Agent integration for ${options.client}`, plans)
   if (options.client === 'deepseek' && options.capabilities.some(capability => capability !== 'mcp'))
     plan.warnings.push('Project Skills and AGENTS.md instructions are shared with other agents; removing them affects those agents too.')
+  if (['qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'].includes(options.client) && options.capabilities.some(capability => capability !== 'mcp'))
+    plan.warnings.push('Project Skills and instructions may be shared by IDE, CLI, or other agents; removing them affects those clients too.')
   return plan
 }
 
@@ -280,7 +306,8 @@ export async function inspectAgentInstructions(projectDir: string, client: McpCl
   if (!instructions)
     return { installed: false }
   try {
-    return { installed: Boolean(findManagedInstructionsRange(instructions)) }
+    const range = findManagedInstructionsRange(instructions)
+    return { installed: Boolean(range && instructions.slice(range.start, range.end).includes(`\`${skillReference(client)}\``)) }
   }
   catch {
     return { installed: false }
