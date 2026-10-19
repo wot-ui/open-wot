@@ -58,6 +58,15 @@ describe('multi-client location handling', () => {
     }
   })
 
+  it.each([planMcpInstall, planMcpRemove])('reports auto ambiguity before checking the DeepSeek project location', async (plan) => {
+    const options = await fixture()
+    await mkdir(join(options.cwd, '.dsh'))
+    await writeFile(join(options.cwd, '.dsh', 'wot-ui.json'), '{}')
+    await mkdir(join(options.cwd, '.cursor'))
+    await writeFile(join(options.cwd, '.cursor', 'mcp.json'), '{}')
+    await expect(plan('auto', options)).rejects.toThrow('Multiple MCP clients detected (cursor, deepseek)')
+  })
+
   it('includes DeepSeek at the Git root and still rejects invalid configuration in all selection', async () => {
     const options = await fixture()
     const rootOptions = { ...options, cwd: options.root }

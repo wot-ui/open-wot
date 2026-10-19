@@ -121,8 +121,11 @@ export async function apply(ctx, config) {
       disposal: undefined,
       dispose() {
         this.disposed = true
-        // Every lifecycle waits for the same cleanup, including concurrent aborts.
-        this.disposal ??= Promise.resolve().then(() => this.fiber?.dispose())
+        // Share pending/successful cleanup; let later lifecycles retry failures.
+        this.disposal ??= Promise.resolve().then(() => this.fiber?.dispose()).catch((error) => {
+          this.disposal = undefined
+          throw error
+        })
         return this.disposal
       },
     }
@@ -132,13 +135,9 @@ export async function apply(ctx, config) {
     }
     signal?.addEventListener('abort', cancel, { once: true })
     const release = agent.ctx.effect(() => async () => {
-      try {
-        await record.dispose()
-      }
-      finally {
-        if (mounts.get(agent) === record)
-          mounts.delete(agent)
-      }
+      await record.dispose()
+      if (mounts.get(agent) === record)
+        mounts.delete(agent)
     })
     let diagnostic = 'project directory could not be resolved'
     try {
