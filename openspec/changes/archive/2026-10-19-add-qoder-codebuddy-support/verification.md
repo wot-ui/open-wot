@@ -61,3 +61,11 @@
 - 验证：`pnpm lint && pnpm typecheck && pnpm test && pnpm build` 通过，40 个测试文件、373 项测试；`pnpm site:lint && pnpm site:build`、`pnpm exec openspec validate --specs` 和 `git diff --check` 通过。
 - 构建后人工回归：临时项目与隔离 os.homedir，MCP / Agent × project / user 共 4 组验证空旧配置下 all 的 dry-run、init、remove 无旧文件残留；Agent 验证移除 Qoder 引用后 Cursor 规则仍有效且重复移除无变更。另 4 组验证真实旧服务冲突仍在任何写入前拒绝，随后显式 CLI 生命周期成功且原服务保留。未修改真实客户端配置。
 - 复核结论：无新增未解决的实现或场景缺口；保留客户端会话加载未实测与最低兼容 CLI 版本未验证两项限制，已公开写入 README。
+
+## 再次 Review：相同旧注册的迁移
+
+- 问题确认：旧路径仅注册相同定义的 wot-ui 时，原遮蔽检查仍拒绝创建新路径，阻断 CLI 单独接入后扩展到 all 的流程。
+- 修复：仅在旧 mcpServers 恰好包含 wot-ui 且与本次定义深度相等时放行；对象键顺序不影响比较，版本、环境变量、禁用标记或其他字段的差异仍按冲突处理。复用 JSONC 移除计划，将旧条目清理与新文件创建纳入同一事务，避免后续 remove 留下隐藏注册；计划期间旧配置发生变化则拒绝继续。
+- 完整性与一致性：新增相同注册迁移场景，当前共 6 项需求、18 个场景；主规格、归档规格、设计与 README 同步。其余 review 中的既有空白文件、宽泛提示和可选重构不纳入本次修复。
+- 验证：新增 11 项回归测试覆盖 project / user、claude / qoder / codebuddy / all、Agent 合并计划、dry-run 无写入、注释与根设置保留、幂等、移除无残留、不同定义拒绝及中途失败回滚。`pnpm lint && pnpm typecheck && pnpm test && pnpm build` 通过，40 个测试文件、384 项测试；官网 lint / build、4 份主规格校验和 diff 空白检查通过。
+- 构建后真实命令：隔离项目及 os.homedir，MCP / Agent × project / user 共 4 组验证“在旧文件安装 CodeBuddy CLI → all dry-run / init → 重复 init → CLI status → all remove”；迁移前预览不写入、迁移后旧注释及设置保留、两份配置均无残留。未修改真实客户端配置。

@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { planAgentInit, planAgentRemove } from '../../src/application/agent-onboarding'
 import { applyChangePlan, mergeChangePlans } from '../../src/application/change-plan'
-import { planMcpInstall, planMcpRemove, planSelectedClient } from '../../src/application/mcp-onboarding'
+import { createMcpServerDefinition, planMcpInstall, planMcpRemove, planSelectedClient } from '../../src/application/mcp-onboarding'
 
 const directories: string[] = []
 afterEach(async () => {
@@ -23,6 +23,65 @@ async function fixture() {
 }
 
 describe('multi-client location handling', () => {
+  it.each([
+    ['claude', 'project'],
+    ['qoder', 'project'],
+    ['all', 'project'],
+    ['codebuddy', 'user'],
+    ['all', 'user'],
+  ] as const)('%s migrates an identical legacy %s wot-ui entry without leaving a stale registration', async (client, scope) => {
+    const options = { ...await fixture(), scope, pin: '1.2.3' }
+    const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')
+    const server = createMcpServerDefinition(options.pin)
+    // Object key order is irrelevant; comments and unrelated root settings survive.
+    const original = `{\r\n // keep this comment\r\n "setting": true, "mcpServers": {"wot-ui": ${JSON.stringify({ args: server.args, command: server.command })}},\r\n}\r\n`
+    await writeFile(legacy, original)
+    const plan = mergeChangePlans('Migrate', await planMcpInstall(client, options))
+    expect(await readFile(legacy, 'utf8')).toBe(original)
+    expect(plan.changes.filter(change => change.path === legacy)).toHaveLength(1)
+    await applyChangePlan(plan)
+    const retained = await readFile(legacy, 'utf8')
+    expect(retained).toContain('// keep this comment\r\n')
+    expect(retained).toContain('"setting": true')
+    expect(retained).not.toContain('"wot-ui"')
+    expect(mergeChangePlans('Again', await planMcpInstall(client, options)).changes).toEqual([])
+    const active = scope === 'project' ? join(options.cwd, '.mcp.json') : join(options.homeDir, '.codebuddy', 'mcp.json')
+    expect(JSON.parse(await readFile(active, 'utf8')).mcpServers['wot-ui']).toEqual(server)
+    await applyChangePlan(mergeChangePlans('Remove', await planMcpRemove(client, options)))
+    expect(await readFile(active, 'utf8')).not.toContain('"wot-ui"')
+    expect(await readFile(legacy, 'utf8')).toBe(retained)
+  })
+
+  it.each([
+    { command: 'custom', args: [] },
+    { ...createMcpServerDefinition(), env: { TOKEN: 'keep-me' } },
+    { ...createMcpServerDefinition(), disabled: true },
+    createMcpServerDefinition('0.1.0'),
+  ])('protects a legacy wot-ui definition with different settings: %j', async (server) => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    const content = JSON.stringify({ mcpServers: { 'wot-ui': server } })
+    await writeFile(legacy, content)
+    for (const client of ['claude', 'all'] as const)
+      await expect(planMcpInstall(client, options)).rejects.toThrow('would hide existing CodeBuddy CLI configuration')
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
+  it('rolls back both files if migrating the identical legacy registration fails', async () => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    const original = JSON.stringify({ mcpServers: { 'wot-ui': createMcpServerDefinition() } })
+    await writeFile(legacy, original)
+    const plan = mergeChangePlans('Migrate', await planMcpInstall('claude', options))
+    await expect(applyChangePlan(plan, { beforeCommit: (_change, index) => {
+      if (index === 1)
+        throw new Error('injected failure')
+    } })).rejects.toThrow('injected failure')
+    expect(await readFile(legacy, 'utf8')).toBe(original)
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
   it.each(['claude', 'qoder', 'qoder-cli', 'all'] as const)('%s allows unrelated or empty legacy JSON without losing its contents', async (client) => {
     const options = await fixture()
     const legacy = join(options.cwd, 'mcp.json')

@@ -289,7 +289,7 @@ Qoder IDE 配置路径已核对官方 1.34.0 发行包，CodeBuddy IDE 已核对
 
 CodeBuddy CLI 按[当前官方 MCP 文档](https://www.codebuddy.ai/docs/cli/mcp)中的 `~/.codebuddy/.mcp.json` → `~/.codebuddy/mcp.json` → `~/.codebuddy.json` 复用首个已有文件；项目中仅有 `mcp.json` 时也会复用，避免新建文件遮蔽原配置。**这套路径规则不兼容 CLI 1.7.0**：该版本的 user 配置固定为 `~/.codebuddy.json`，project 配置固定为 `.mcp.json`，与 IDE 共存时尤其容易写入 CLI 不读取的文件。请升级后按下文确认加载，或为旧版手动配置 MCP；open-wot 不会自动识别版本并切换路径。目前尚未验证采用新规则的最低版本，不承诺所有高于 1.7.0 的版本均兼容。
 
-如果 `all` 或其他客户端初始化将创建更高优先级的文件并遮蔽 CodeBuddy CLI 已有的 `mcpServers`，命令会在写入前报错。请先将旧文件的 MCP 服务合并或迁移到错误提示中的新路径，再重试原命令；`--dry-run` 也会检查此冲突。无关 JSON 对象、空文件或空 `mcpServers` 不阻断初始化，`all` 也不会在失去优先级的旧文件中重复写入服务。无法解析的旧文件仍需先修复或移走。
+如果 `all` 或其他客户端初始化将创建更高优先级的文件并遮蔽 CodeBuddy CLI 已有的 `mcpServers`，命令会在写入前报错。请先将旧文件的 MCP 服务合并或迁移到错误提示中的新路径，再重试原命令；`--dry-run` 也会检查此冲突。无关 JSON 对象、空文件或空 `mcpServers` 不阻断初始化，`all` 也不会在失去优先级的旧文件中重复写入服务。旧文件若只注册了与本次生成定义完全一致的 `wot-ui`，则自动迁移到新路径，并在同一事务中清理旧条目，保留注释和其他设置；版本、环境变量或其他字段不同仍按冲突处理。无法解析的旧文件仍需先修复或移走。
 
 这些客户端的项目 `.mcp.json` 可能与 Claude Code 共用；同品牌 IDE / CLI 也共用项目 Skill 和 Instructions。`all` 会合并相同文件的变更，移除共享项会影响其他使用者。Qoder 与其他 Agent 共用 `AGENTS.md` 时，托管区块会同时保留 `.agents` 和 `.qoder` 的 Skill 引用，供对应客户端选择；移除时只删除所选客户端对应的引用，其余引用和区块外文本保留。使用同一个 Skill 路径的客户端仍共享该引用，移除会一并影响它们。CodeBuddy 使用 `CODEBUDDY.md`，已有 `AGENTS.md` 的项目应将仍需遵守的规则引用或合并到 `CODEBUDDY.md` 中。
 

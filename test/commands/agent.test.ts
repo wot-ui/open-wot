@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Command } from 'commander'
 import { afterEach, describe, expect, it } from 'vitest'
+import { createMcpServerDefinition } from '../../src/application/mcp-onboarding'
 import { registerAgentCommand } from '../../src/commands/agent'
 import { joinedStdout, runCli, setupCliIo } from '../helpers/cli'
 
@@ -82,6 +83,35 @@ describe('agent command', () => {
     }
     expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).not.toContain('open-wot agent instructions start')
     expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
+  })
+
+  it('agent all migrates an identical legacy registration in its combined plan', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-wot-agent-migrate-'))
+    directories.push(root)
+    await mkdir(join(root, '.git'))
+    const cwd = join(root, 'sub')
+    await mkdir(cwd)
+    const legacy = join(cwd, 'mcp.json')
+    const original = JSON.stringify({ mcpServers: { 'wot-ui': createMcpServerDefinition() }, keep: true })
+    await writeFile(legacy, original)
+    for (const flag of ['--dry-run', '--yes']) {
+      stdout.mockClear()
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', 'init', '--client', 'all', '--with', 'mcp,instructions', '--cwd', cwd, flag, '--format', 'json'])
+      expect(process.exitCode).toBeUndefined()
+      const output = JSON.parse(joinedStdout(stdout))
+      expect(output.plan.changes.filter((change: { path: string }) => change.path === 'mcp.json')).toHaveLength(1)
+      if (flag === '--dry-run')
+        expect(await readFile(legacy, 'utf8')).toBe(original)
+    }
+    expect(JSON.parse(await readFile(legacy, 'utf8'))).toEqual({ mcpServers: {}, keep: true })
+    const program = new Command()
+    registerAgentCommand(program)
+    await runCli(program, ['agent', 'remove', '--client', 'all', '--with', 'mcp,instructions', '--cwd', cwd, '--yes'])
+    expect(process.exitCode).toBeUndefined()
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
+    expect(await readFile(legacy, 'utf8')).not.toContain('wot-ui')
   })
 
   it('deduplicates shared Skill and instructions for all non-Claude clients', async () => {

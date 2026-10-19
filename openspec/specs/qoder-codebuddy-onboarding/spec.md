@@ -91,6 +91,13 @@ Agent 初始化 MUST 为 Qoder IDE 与 CLI 使用项目 `.qoder/skills/wot-ui-v2
 - **THEN** 不以遮蔽既有 MCP 服务为由阻断
 - **AND** `all` 不在已失去优先级的旧文件重复写入 `wot-ui`
 
+#### Scenario: 迁移相同的旧 wot-ui 注册
+- **GIVEN** 旧文件只包含与本次生成定义完全一致的 `wot-ui` 服务
+- **WHEN** 初始化将创建更高优先级的配置文件
+- **THEN** 将服务迁移到新文件，并在同一事务中移除旧条目，保留旧文件的注释和其他设置
+- **AND** 重复初始化无变更，后续移除不留下旧注册，写入失败时回滚两份文件
+- **AND** 定义不同或含其他服务时仍在写入前报告冲突
+
 #### Scenario: 按引用移除共享规则
 - **GIVEN** `AGENTS.md` 托管区块同时包含 `.agents` 和 `.qoder` 的 Skill 引用
 - **WHEN** 仅移除 Qoder 的 Instructions
