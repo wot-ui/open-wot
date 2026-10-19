@@ -47,7 +47,7 @@
 | `doctor` | 检查文件和真实 MCP handshake |
 | `remove` | 删除 open-wot 托管内容 |
 
-`init/status/doctor/remove` 支持 `--client auto|all|claude|cursor|vscode|codex|opencode|antigravity`、`--scope`、`--with`、`--cwd`、`--format` 和 `--pin`。`init/remove` 支持 `--dry-run`、`--yes`；`doctor` 支持 `--timeout`。
+`init/status/doctor/remove` 支持 `--client auto|all|claude|cursor|vscode|codex|opencode|antigravity|deepseek`、`--scope`、`--with`、`--cwd`、`--format` 和 `--pin`。`init/remove` 支持 `--dry-run`、`--yes`；`doctor` 支持 `--timeout`。
 
 ### MCP
 
@@ -73,6 +73,7 @@
 | Codex | `.codex/config.toml` |
 | OpenCode | `opencode.json[c]` / `.opencode/opencode.json[c]` |
 | Antigravity | `.agents/mcp_config.json` |
+| DeepSeek Harness | `.dsh/wot-ui.json`（另需本机桥接登记） |
 
 一次接入所有客户端：
 
@@ -82,6 +83,8 @@ wot agent doctor --client all --timeout 30000
 ```
 
 默认 Agent 接入安装 MCP、`wot-ui-v2` Skill 和托管 Instructions。`wot-ui-cli` Skill 随 npm 包发布，但不默认安装到组件使用项目。
+
+DeepSeek 默认按项目隔离，初始化时会在 `$DSH_HOME`（默认 `~/.dsh`）安装共享 bridge 并登记项目；每台机器都需初始化，首次安装后需重启桌面版。显式接入请在 Git 根目录执行；`--client all` 初始化或移除时，如子目录不满足 DeepSeek 的项目 MCP 或 Skill 位置要求，会提示并跳过该客户端。`--scope user` 仅改变 MCP 配置位置，Skill 与 Instructions 仍在项目中。完整接入与迁移说明以 README 为准。
 
 MCP 提供 8 个 tools：
 
@@ -104,6 +107,7 @@ src/application    MCP/Agent 编排和 ChangePlan
 src/mcp            Server、tools、prompts、adapters
 src/data           loader 和版本解析
 src/utils          文件、终端、项目扫描等公共能力
+runtime            DeepSeek 桌面项目加载 bridge
 scripts            extract、sync、compress
 data               多版本离线数据
 skills             Agent Skills
@@ -161,6 +165,6 @@ pnpm exec publint
 npm pack --dry-run --json
 ```
 
-发布包应包含 `dist/`、压缩数据、`data/versions.json`、`skills/wot-ui-v2` 和 `skills/wot-ui-cli`。
+发布包应包含 `dist/`、`runtime/deepseek-project-bridge.mjs`、压缩数据、`data/versions.json`、`skills/wot-ui-v2` 和 `skills/wot-ui-cli`。
 
 维护者使用 `pnpm release`。bumpp 默认更新版本、提交、创建 tag 并推送；`v*` tag 触发 GitHub Actions 发布。发布后检查 npm 版本、文件和 dist-tags，预发布版本不要占用 `latest`。

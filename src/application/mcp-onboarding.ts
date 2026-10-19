@@ -3,6 +3,7 @@ import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import packageJson from '../../package.json'
+import { DeepseekProjectLocationError } from '../../runtime/deepseek-project-bridge.mjs'
 import { getMcpClientAdapter, mcpClientAdapters } from '../mcp/clients'
 import { redactSensitiveText } from '../utils/redaction'
 
@@ -72,13 +73,31 @@ export async function inspectMcpClients(client: McpClientId | 'auto' | 'all', op
 export async function planMcpInstall(client: McpClientId | 'auto' | 'all', options: McpOperationOptions = {}): Promise<ChangePlan[]> {
   const adapters = await resolveMcpAdapters(client, options)
   const context = createPlanContext(options)
-  return Promise.all(adapters.map(adapter => adapter.planInstall(context)))
+  return Promise.all(adapters.map(adapter => planSelectedClient(client, adapter.id, () => adapter.planInstall(context))))
 }
 
 export async function planMcpRemove(client: McpClientId | 'auto' | 'all', options: McpOperationOptions = {}): Promise<ChangePlan[]> {
   const adapters = await resolveMcpAdapters(client, options)
   const context = createPlanContext(options)
-  return Promise.all(adapters.map(adapter => adapter.planRemove(context)))
+  return Promise.all(adapters.map(adapter => planSelectedClient(client, adapter.id, () => adapter.planRemove(context))))
+}
+
+export async function planSelectedClient(selection: McpClientId | 'auto' | 'all', client: McpClientId, plan: () => Promise<ChangePlan>): Promise<ChangePlan> {
+  try {
+    return await plan()
+  }
+  catch (error) {
+    // Only a location mismatch may be skipped; configuration and security errors still fail.
+    if (selection !== 'all' || client !== 'deepseek' || !(error instanceof DeepseekProjectLocationError))
+      throw error
+    return {
+      id: 'deepseek-skipped-location',
+      summary: 'Skip DeepSeek at this directory',
+      changes: [],
+      warnings: [`Skipped DeepSeek: ${error.message}`],
+      requiresConfirmation: false,
+    }
+  }
 }
 
 export async function printMcpConfig(client: McpClientId, options: McpOperationOptions = {}): Promise<string> {

@@ -2,7 +2,7 @@ import type { ApplyResult, ChangePlan, PlannedFileChange, PublicChangePlan } fro
 import { randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
 import { access, chmod, copyFile, lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, relative } from 'node:path'
+import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { createInterface } from 'node:readline/promises'
 
@@ -114,12 +114,13 @@ async function assertPlanPath(change: PlannedFileChange): Promise<void> {
   if (!allowedRoot)
     throw new Error(`Missing allowed root for change target: ${path}`)
 
-  const [resolvedRoot, existingPath] = await Promise.all([
-    realpath(allowedRoot),
+  const [existingRoot, existingPath] = await Promise.all([
+    nearestExistingPath(allowedRoot),
     nearestExistingPath(path),
   ])
-  const resolvedExistingPath = await realpath(existingPath)
-  if (!isWithinRoot(resolvedRoot, resolvedExistingPath))
+  const resolvedRoot = resolve(await realpath(existingRoot), relative(existingRoot, allowedRoot))
+  const resolvedTarget = resolve(await realpath(existingPath), relative(existingPath, path))
+  if (!isWithinRoot(resolvedRoot, resolvedTarget))
     throw new Error(`Refusing change target outside allowed root: ${path}`)
 
   if (existingPath === path && (await lstat(path)).isSymbolicLink())

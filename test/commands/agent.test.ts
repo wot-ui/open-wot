@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Command } from 'commander'
@@ -37,6 +37,27 @@ describe('agent command', () => {
 
     const instructions = await readFile(join(cwd, 'AGENTS.md'), 'utf8')
     expect(instructions.match(/open-wot agent instructions start/g)).toHaveLength(1)
+  })
+
+  it('previews all clients from a Git subdirectory with a visible DeepSeek skip warning', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-wot-agent-subdir-'))
+    directories.push(root)
+    const cwd = join(root, 'sub')
+    await mkdir(join(root, '.git'))
+    await mkdir(cwd)
+    for (const action of ['init', 'remove']) {
+      stdout.mockClear()
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', action, '--client', 'all', '--with', 'mcp', '--cwd', cwd, '--dry-run', '--format', 'json'])
+      expect(process.exitCode).toBeUndefined()
+      const output = JSON.parse(joinedStdout(stdout))
+      expect(output.dryRun).toBe(true)
+      expect(output.plan.warnings).toEqual(expect.arrayContaining([expect.stringContaining('Skipped DeepSeek:')]))
+      if (action === 'init')
+        expect(output.plan.changes).toHaveLength(6)
+    }
+    await expect(readFile(join(cwd, '.cursor', 'mcp.json'))).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
   it('status and doctor only inspect capabilities selected by --with', async () => {

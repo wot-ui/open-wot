@@ -3,10 +3,10 @@ import type { AgentCapability } from '../application/agent-onboarding'
 import type { McpDoctorReport } from '../application/mcp-doctor'
 import type { McpClientId, McpScope } from '../mcp/clients'
 import process from 'node:process'
-import { inspectAgentInstructions, inspectAgentSkill, planAgentInit, planAgentRemove } from '../application/agent-onboarding'
+import { agentSkillLocationProblem, inspectAgentInstructions, inspectAgentSkill, planAgentInit, planAgentRemove } from '../application/agent-onboarding'
 import { applyChangePlan, confirmChangePlan, formatChangePlan, mergeChangePlans, toPublicChangePlan } from '../application/change-plan'
 import { doctorMcpClients, formatMcpDoctorReport, toPublicMcpDoctorReport } from '../application/mcp-doctor'
-import { detectMcpClients, inspectMcpClients, resolveMcpAdapters, toPublicClientConfigState } from '../application/mcp-onboarding'
+import { detectMcpClients, inspectMcpClients, planSelectedClient, resolveMcpAdapters, toPublicClientConfigState } from '../application/mcp-onboarding'
 import { isMcpClientId, isMcpScope, MCP_CLIENT_IDS } from '../mcp/clients'
 import { writeJson, writeLine } from '../utils/output'
 import { parsePositiveIntegerOption, printError } from './shared'
@@ -97,6 +97,7 @@ async function inspectCapabilities(client: McpClientId, capabilities: AgentCapab
     capabilities.includes('instructions') ? inspectAgentInstructions(projectDir, client) : Promise.resolve(undefined),
   ])
   const mcp = mcpStates[0]
+  const skillProblem = capabilities.includes('skill') ? await agentSkillLocationProblem(projectDir, client) : undefined
   return {
     client,
     capabilities: {
@@ -104,7 +105,7 @@ async function inspectCapabilities(client: McpClientId, capabilities: AgentCapab
         ? { status: mcp?.matches ? 'pass' : 'fail', state: mcp ? toPublicClientConfigState(mcp) : undefined }
         : { status: 'skipped' },
       skill: capabilities.includes('skill')
-        ? { status: skill?.matches ? 'pass' : 'fail', installed: skill?.installed, matches: skill?.matches }
+        ? { status: skill?.matches && !skillProblem ? 'pass' : 'fail', installed: skill?.installed, matches: Boolean(skill?.matches) && !skillProblem, ...(skillProblem ? { problem: skillProblem } : {}) }
         : { status: 'skipped' },
       instructions: capabilities.includes('instructions')
         ? { status: instructions?.installed ? 'pass' : 'fail', installed: instructions?.installed }
@@ -136,7 +137,8 @@ function formatCapabilityReport(report: AgentCapabilityReport): string {
   const capabilities = Object.entries(report.capabilities)
     .map(([name, capability]) => `${name}=${capability.status}`)
     .join(' ')
-  return `${state} ${report.client}: ${capabilities}`
+  const problems = Object.values(report.capabilities).flatMap(capability => typeof capability.problem === 'string' ? [`  ${capability.problem}`] : [])
+  return [`${state} ${report.client}: ${capabilities}`, ...problems].join('\n')
 }
 
 export function registerAgentCommand(program: Command): void {
@@ -148,13 +150,13 @@ export function registerAgentCommand(program: Command): void {
     .action(async (options: AgentCommandOptions) => runSafely(options, async () => {
       const clients = await resolveClients(options)
       const capabilities = parseCapabilities(options.with)
-      const plans = await Promise.all(clients.map(client => planAgentInit({
+      const plans = await Promise.all(clients.map(client => planSelectedClient(parseClient(options.client), client, () => planAgentInit({
         client,
         capabilities,
         cwd: options.cwd,
         scope: parseScope(options.scope),
         pin: options.pin,
-      })))
+      }))))
       const plan = mergeChangePlans('Initialize wot-ui Agent integration', plans)
       if (!options.dryRun) {
         if (!await confirmChangePlan(plan, { yes: options.yes, cwd: options.cwd })) {
@@ -245,13 +247,13 @@ export function registerAgentCommand(program: Command): void {
     .action(async (options: AgentCommandOptions) => runSafely(options, async () => {
       const clients = await resolveClients(options)
       const capabilities = parseCapabilities(options.with)
-      const plans = await Promise.all(clients.map(client => planAgentRemove({
+      const plans = await Promise.all(clients.map(client => planSelectedClient(parseClient(options.client), client, () => planAgentRemove({
         client,
         capabilities,
         cwd: options.cwd,
         scope: parseScope(options.scope),
         pin: options.pin,
-      })))
+      }))))
       const plan = mergeChangePlans('Remove wot-ui Agent integration', plans)
       if (!options.dryRun) {
         if (!await confirmChangePlan(plan, { yes: options.yes, cwd: options.cwd })) {
