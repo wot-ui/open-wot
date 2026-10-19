@@ -70,7 +70,7 @@ wot agent init --client all
 wot agent doctor --client all --timeout 30000
 ```
 
-`--client all` 在 project scope 下会处理 Claude Code、Cursor、VS Code、Codex、OpenCode、Antigravity 和 DeepSeek Harness；在 user scope 下只处理支持用户级配置的客户端，包括 DeepSeek Harness。
+`--client all` 在 project scope 下会处理 Claude Code、Cursor、VS Code、Codex、OpenCode、Antigravity 和 DeepSeek Harness；在 user scope 下只处理支持用户级配置的客户端，包括 DeepSeek Harness。若在 Git 子目录初始化或移除，DeepSeek 的项目 MCP 或 Skill 无法在该目录接入时，会提示并跳过 DeepSeek，继续处理其他客户端；可加 `--cwd <项目根目录>` 接入全部客户端。
 
 配置完成后重启客户端；如果出现“信任项目”或“批准 MCP Server”的提示，请按客户端指引确认。
 

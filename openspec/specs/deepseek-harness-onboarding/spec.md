@@ -20,9 +20,17 @@ CLI MUST 识别 `deepseek`，显示名称为 DeepSeek Harness，声明支持 pro
 - **THEN** 命令非零退出并给出修复指引，不写入任何文件
 
 #### Scenario: 全客户端选择
+- **GIVEN** 当前目录满足所选能力的位置要求
 - **WHEN** 用户选择 `--client all`
 - **THEN** user 和 project scope 均包含 DeepSeek
 - **AND** auto 仍按选定 scope 筛选客户端，多匹配时仍要求显式选择
+
+#### Scenario: 全客户端接入兼容 Git 子目录
+- **GIVEN** 当前目录是 Git 子目录，DeepSeek 的 project MCP 或项目 Skill 要求从 Git 根目录操作
+- **WHEN** 用户以 `--client all` 初始化或移除 Agent/MCP 接入
+- **THEN** 跳过该次 DeepSeek 计划并给出包含根目录修复指引的 warning，继续规划其他客户端
+- **AND** 显式选择 deepseek 或 auto 仍报位置错误；用户级 MCP 单独操作不受影响
+- **AND** 配置损坏、冲突或安全校验错误仍使操作失败，不作为可跳过的位置错误
 
 #### Scenario: 默认使用项目级接入
 - **WHEN** 用户执行 `wot agent init --client deepseek` 而未指定 scope

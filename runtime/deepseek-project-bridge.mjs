@@ -68,13 +68,15 @@ export async function gitRoot(cwd) {
   }
 }
 
+export class DeepseekProjectLocationError extends Error {}
+
 export async function installRoot(cwd) {
   const root = await realpath(cwd)
   if (!(await stat(root)).isDirectory())
     throw new Error('DeepSeek project cwd must be a directory')
   const git = await gitRoot(root)
   if (git && git !== root)
-    throw new Error(`Run from the Git root using --cwd ${git}`)
+    throw new DeepseekProjectLocationError(`Run from the Git root using --cwd ${JSON.stringify(git)}`)
   return root
 }
 
@@ -116,9 +118,12 @@ export async function apply(ctx, config) {
     const record = {
       disposed: false,
       fiber: undefined,
-      async dispose() {
+      disposal: undefined,
+      dispose() {
         this.disposed = true
-        await this.fiber?.dispose()
+        // Every lifecycle waits for the same cleanup, including concurrent aborts.
+        this.disposal ??= Promise.resolve().then(() => this.fiber?.dispose())
+        return this.disposal
       },
     }
     mounts.set(agent, record)
@@ -127,15 +132,19 @@ export async function apply(ctx, config) {
     }
     signal?.addEventListener('abort', cancel, { once: true })
     const release = agent.ctx.effect(() => async () => {
-      await record.dispose()
-      mounts.delete(agent)
+      try {
+        await record.dispose()
+      }
+      finally {
+        if (mounts.get(agent) === record)
+          mounts.delete(agent)
+      }
     })
     let diagnostic = 'project directory could not be resolved'
     try {
       const project = await selectProject(agent.session.header.cwd, config.projects)
       if (!project) {
         await release()
-        mounts.delete(agent)
         return
       }
       diagnostic = 'project declaration is unreadable or invalid'

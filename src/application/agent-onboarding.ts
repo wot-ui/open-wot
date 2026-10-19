@@ -5,6 +5,7 @@ import { access, readdir, readFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { DeepseekProjectLocationError } from '../../runtime/deepseek-project-bridge.mjs'
 import { mergeChangePlans } from './change-plan'
 import { createDetectContext, planMcpInstall, planMcpRemove } from './mcp-onboarding'
 
@@ -30,7 +31,7 @@ async function assertSkillLocation(options: AgentPlanOptions, cwd: string): Prom
     return
   const problem = await agentSkillLocationProblem(cwd, options.client)
   if (problem)
-    throw new Error(problem)
+    throw new DeepseekProjectLocationError(problem)
 }
 
 const INSTRUCTIONS_START = '<!-- open-wot agent instructions start -->'

@@ -59,10 +59,11 @@ describe('bridge lifecycle', () => {
     await f.created()
     expect(f.agent.ctx.plugin).toHaveBeenCalledOnce()
     await f.agentEffects[0]!()
-    expect(f.fiber.dispose).toHaveBeenCalled()
+    expect(f.fiber.dispose).toHaveBeenCalledOnce()
     await f.effects[0]!()
     await f.created()
     expect(f.agent.ctx.plugin).toHaveBeenCalledOnce()
+    expect(f.fiber.dispose).toHaveBeenCalledOnce()
   })
   it.each(['unregistered', 'stale', 'global', 'global-pending', 'malformed'])('fails closed for %s without importing a plugin', async (kind) => {
     const f = await fixture()
@@ -85,6 +86,9 @@ describe('bridge lifecycle', () => {
     f.fiber.await.mockRejectedValue(new Error('SECRET startup failure'))
     await f.created()
     expect(f.fiber.dispose).toHaveBeenCalledOnce()
+    await f.agentEffects[0]!()
+    await f.effects[0]!()
+    expect(f.fiber.dispose).toHaveBeenCalledOnce()
     expect(f.ctx.logger.warn).toHaveBeenCalledOnce()
     expect(JSON.stringify(f.ctx.logger.warn.mock.calls)).not.toContain('SECRET')
   })
@@ -105,7 +109,46 @@ describe('bridge lifecycle', () => {
     await vi.waitFor(() => expect(f.fiber.dispose).toHaveBeenCalled())
     finish()
     await started
+    await f.agentEffects[0]!()
     await f.effects[0]!()
-    expect(f.fiber.dispose).toHaveBeenCalled()
+    expect(f.fiber.dispose).toHaveBeenCalledOnce()
+  })
+  it('waits for the same disposal across concurrent agent and bridge cleanup', async () => {
+    const f = await fixture()
+    await f.created()
+    let finish!: () => void
+    f.fiber.dispose.mockImplementation(() => new Promise<void>((resolve) => {
+      finish = resolve
+    }))
+    let agentDone = false
+    let bridgeDone = false
+    const agentCleanup = f.agentEffects[0]!().then(() => {
+      agentDone = true
+    })
+    const bridgeCleanup = f.effects[0]!().then(() => {
+      bridgeDone = true
+    })
+    await vi.waitFor(() => expect(f.fiber.dispose).toHaveBeenCalledOnce())
+    expect(agentDone).toBe(false)
+    expect(bridgeDone).toBe(false)
+    finish()
+    await Promise.all([agentCleanup, bridgeCleanup])
+    expect(agentDone && bridgeDone).toBe(true)
+    expect(f.fiber.dispose).toHaveBeenCalledOnce()
+  })
+  it('forgets the mount even when agent disposal rejects', async () => {
+    const f = await fixture()
+    await f.created()
+    f.fiber.dispose.mockRejectedValueOnce(new Error('cleanup failed'))
+    await expect(f.agentEffects[0]!()).rejects.toThrow('cleanup failed')
+    // A failed release must not leave the agent permanently marked as mounted.
+    await f.created()
+    expect(f.agent.ctx.plugin).toHaveBeenCalledTimes(2)
+    await expect(f.agentEffects[0]!()).rejects.toThrow('cleanup failed')
+    await f.created()
+    expect(f.agent.ctx.plugin).toHaveBeenCalledTimes(2)
+    await f.agentEffects[1]!()
+    await f.effects[0]!()
+    expect(f.fiber.dispose).toHaveBeenCalledTimes(2)
   })
 })

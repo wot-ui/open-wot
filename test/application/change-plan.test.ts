@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { applyChangePlan, ChangePlanApplyError, ChangePlanCleanupError, formatChangePlan, mergeChangePlans, toPublicChangePlan } from '../../src/application/change-plan'
 
@@ -11,6 +11,55 @@ afterEach(async () => {
 })
 
 describe('change plan transaction', () => {
+  it.each([false, true])('creates a missing allowed root with normalized parent segments: %s', async (parentSegments) => {
+    const directory = await mkdtemp(join(tmpdir(), 'open-wot-plan-missing-'))
+    directories.push(directory)
+    const allowedRoot = parentSegments ? `${directory}${sep}unused${sep}..${sep}new-home` : join(directory, 'new-home')
+    const target = join(directory, 'new-home', 'nested', 'config.json')
+    await applyChangePlan({
+      id: 'missing-root',
+      summary: 'missing root',
+      warnings: [],
+      requiresConfirmation: true,
+      changes: [{ type: 'write-file', path: target, allowedRoot, after: '{}', reason: 'create config' }],
+    })
+    expect(await readFile(target, 'utf8')).toBe('{}')
+  })
+
+  it('rejects parent traversal out of a missing allowed root before any write', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'open-wot-plan-traversal-'))
+    directories.push(directory)
+    const allowedRoot = join(directory, 'missing')
+    const target = `${allowedRoot}${sep}..${sep}outside.json`
+    await expect(applyChangePlan({
+      id: 'traversal',
+      summary: 'traversal',
+      warnings: [],
+      requiresConfirmation: true,
+      changes: [{ type: 'write-file', path: target, allowedRoot, after: '{}', reason: 'escape' }],
+    })).rejects.toThrow('outside allowed root')
+    await expect(readFile(join(directory, 'outside.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(readFile(allowedRoot)).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
+  it('rejects a missing target below an external ancestor link', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'open-wot-plan-ancestor-'))
+    directories.push(directory)
+    const root = join(directory, 'project')
+    const outside = join(directory, 'outside')
+    await mkdir(root)
+    await mkdir(outside)
+    await symlink(outside, join(root, 'link'), process.platform === 'win32' ? 'junction' : 'dir')
+    await expect(applyChangePlan({
+      id: 'ancestor-link',
+      summary: 'ancestor link',
+      warnings: [],
+      requiresConfirmation: true,
+      changes: [{ type: 'write-file', path: join(root, 'link', 'missing', 'config.json'), allowedRoot: root, after: '{}', reason: 'escape' }],
+    })).rejects.toThrow('outside allowed root')
+    await expect(readFile(join(outside, 'missing'))).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
   it('deduplicates identical changes from composed onboarding plans', () => {
     const change = { type: 'write-file' as const, path: '/tmp/open-wot-test', allowedRoot: '/tmp', before: undefined, after: 'next', reason: 'same' }
     const plan = mergeChangePlans('merged', [
