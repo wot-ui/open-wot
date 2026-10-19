@@ -2,6 +2,7 @@ import type { McpClientId, PlanContext } from '../../src/mcp/clients'
 import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+import process from 'node:process'
 import { afterEach, describe, expect, it } from 'vitest'
 import { applyChangePlan, mergeChangePlans } from '../../src/application/change-plan'
 import { createMcpServerDefinition, planMcpInstall, resolveMcpAdapters } from '../../src/application/mcp-onboarding'
@@ -17,12 +18,25 @@ async function fixture(): Promise<PlanContext> {
   const homeDir = join(root, 'home')
   await mkdir(cwd)
   await mkdir(homeDir)
-  return { cwd, homeDir, scope: 'project', server: createMcpServerDefinition('1.2.3'), env: { PATH: '' }, platform: 'linux' }
+  // Match the host's PATH separator without detecting local macOS applications.
+  const platform = process.platform === 'win32' ? 'win32' : 'linux'
+  return { cwd, homeDir, scope: 'project', server: createMcpServerDefinition('1.2.3'), env: { PATH: '' }, platform }
 }
 
 async function put(path: string, content: string) {
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, content)
+}
+
+async function putLauncher(context: PlanContext, name: string, electron = false) {
+  const windows = context.platform === 'win32'
+  const bin = join(context.homeDir, 'bin')
+  const path = join(bin, windows ? `${name}.CMD` : name)
+  const content = windows ? '@echo off\r\n' : '#!/bin/sh\n'
+  await put(path, content + (electron ? `${windows ? 'set' : 'export'} ELECTRON_RUN_AS_NODE=1\n` : ''))
+  if (!windows)
+    await chmod(path, 0o755)
+  context.env = { PATH: bin, PATHEXT: '.CMD' }
 }
 
 afterEach(async () => {
@@ -117,13 +131,9 @@ describe('qoder and CodeBuddy adapters', () => {
     const context = await fixture()
     await put(join(context.homeDir, '.codebuddy', 'mcp.json'), '{}')
     expect((await getMcpClientAdapter('codebuddy').detect(context)).installed).toBe(false)
-    const bin = join(context.homeDir, 'bin')
-    await put(join(bin, 'codebuddy'), '#!/bin/sh\n')
-    await chmod(join(bin, 'codebuddy'), 0o755)
-    context.env = { PATH: bin }
+    await putLauncher(context, 'codebuddy')
     expect((await resolveMcpAdapters('auto', context)).map(adapter => adapter.id)).toEqual(['codebuddy-cli'])
-    await put(join(bin, 'buddy'), '#!/bin/sh\n')
-    await chmod(join(bin, 'buddy'), 0o755)
+    await putLauncher(context, 'buddy')
     await expect(resolveMcpAdapters('auto', context)).rejects.toThrow('Multiple MCP clients detected (codebuddy, codebuddy-cli)')
   })
 
@@ -146,13 +156,9 @@ describe('qoder and CodeBuddy adapters', () => {
 
   it('distinguishes a Qoder IDE Electron launcher from the CLI', async () => {
     const context = await fixture()
-    const bin = join(context.homeDir, 'bin')
-    const executable = join(bin, 'qoder')
-    await put(executable, '#!/bin/sh\nELECTRON_RUN_AS_NODE=1 qoder "$@"\n')
-    await chmod(executable, 0o755)
-    const detected = { ...context, platform: 'linux' as const, env: { PATH: bin } }
-    expect((await getMcpClientAdapter('qoder').detect(detected)).installed).toBe(true)
-    expect((await getMcpClientAdapter('qoder-cli').detect(detected)).installed).toBe(false)
+    await putLauncher(context, 'qoder', true)
+    expect((await getMcpClientAdapter('qoder').detect(context)).installed).toBe(true)
+    expect((await getMcpClientAdapter('qoder-cli').detect(context)).installed).toBe(false)
   })
 
   it('uses QODER_CONFIG_DIR without changing IDE paths or bypassing symlink checks', async () => {
