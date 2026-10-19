@@ -21,6 +21,11 @@ CLI MUST 接受 `qoder`、`qoder-cli`、`codebuddy`、`codebuddy-cli`，分别�
 - **THEN** 沿用多客户端歧义提示，要求指定客户端或 `all`
 - **AND** 仅有公共 `.mcp.json` 或 `AGENTS.md` 不足以证明新增客户端已经安装
 
+#### Scenario: 同名启动器来源未知
+- **GIVEN** PATH 中只有来源无法确认的 `qoder` 原生二进制或自定义启动器，且没有客户端专属配置
+- **WHEN** 用户使用 `--client auto`
+- **THEN** 不将其默认判定为 Qoder CLI，并提示显式选择客户端
+
 ### Requirement: MCP 配置生命周期
 
 新增客户端 MUST 支持 `print`、`init`、`status`、`doctor` 和 `remove`，使用该形态实际识别的配置位置及 `mcpServers.wot-ui` stdio 定义。四种客户端 MUST 支持 project 和 user scope；两个 IDE 的 project scope 使用 `.mcp.json`，user scope 分别使用 `~/.qoder/mcp.json` 和 `~/.codebuddy/mcp.json`。未支持的 scope MUST 明确报错且不落盘。
@@ -67,7 +72,7 @@ Agent 初始化 MUST 为 Qoder IDE 与 CLI 使用项目 `.qoder/skills/wot-ui-v2
 #### Scenario: 移除修改过的资产
 - **GIVEN** 用户修改了已安装 Skill 的文件，或在 Instructions 中添加了自己的内容
 - **WHEN** 执行 `wot agent remove`
-- **THEN** 保留修改过的 Skill 文件并提示，Instructions 仅移除 open-wot 托管区块
+- **THEN** 保留修改过的 Skill 文件并提示，Instructions 仅移除所选客户端对应的 Skill 引用，剩余引用为空时才移除 open-wot 托管区块
 - **AND** 对共享 MCP 文件、Skill 或规则的移除提示其可能影响其他使用同一路径的客户端
 
 ### Requirement: 多客户端共享文件兼容
@@ -79,6 +84,18 @@ Agent 初始化 MUST 为 Qoder IDE 与 CLI 使用项目 `.qoder/skills/wot-ui-v2
 - **THEN** 共享 `.mcp.json`、同品牌 Skill 及 Instructions 不产生重复条目或重复区块
 - **AND** 不因新客户端的 Skill 路径不同而丢失现有客户端的规则引用
 - **AND** 不支持当前 scope 的适配器遵循已有过滤语义
+
+#### Scenario: 旧文件没有 MCP 注册
+- **GIVEN** CodeBuddy CLI 的旧路径是无关 JSON 对象、空文件或空 `mcpServers`
+- **WHEN** 初始化其他共用新配置文件的客户端或执行 `all`
+- **THEN** 不以遮蔽既有 MCP 服务为由阻断
+- **AND** `all` 不在已失去优先级的旧文件重复写入 `wot-ui`
+
+#### Scenario: 按引用移除共享规则
+- **GIVEN** `AGENTS.md` 托管区块同时包含 `.agents` 和 `.qoder` 的 Skill 引用
+- **WHEN** 仅移除 Qoder 的 Instructions
+- **THEN** 保留 `.agents` 的引用和托管区块外的原始文字，重复移除不产生变更
+- **AND** `all` 移除时各客户端生成一致的共享文件计划
 
 ### Requirement: 配置错误与事务失败
 
@@ -106,3 +123,5 @@ Agent 初始化 MUST 为 Qoder IDE 与 CLI 使用项目 `.qoder/skills/wot-ui-v2
 #### Scenario: 查看接入说明
 - **WHEN** 用户阅读 README 的支持矩阵和示例
 - **THEN** 能区分四种客户端 ID、实际 scope、配置路径、Skill / Instructions 位置和必要的客户端确认或重启步骤
+
+- **AND** 接入说明明确 CodeBuddy CLI 1.7.0 与当前路径策略不兼容，未验证最低兼容版本，不以独立握手通过替代客户端内加载确认

@@ -142,7 +142,6 @@ describe('qoder and CodeBuddy adapters', () => {
     ['codebuddy', 'codebuddy-cli'],
     ['cbc', 'codebuddy-cli'],
     ['qodercli', 'qoder-cli'],
-    ['qoder', 'qoder-cli'],
   ] as const)('detects the %s executable as %s including Windows shims', async (name, client) => {
     const context = await fixture()
     const bin = join(context.homeDir, 'bin')
@@ -150,8 +149,26 @@ describe('qoder and CodeBuddy adapters', () => {
     await put(executable, '@echo off\n')
     const detected = { ...context, platform: 'win32' as const, env: { PATH: bin, PATHEXT: '.CMD' } }
     expect(await getMcpClientAdapter(client).detect(detected)).toMatchObject({ installed: true, executable })
-    if (name === 'qoder')
-      expect((await getMcpClientAdapter('qoder').detect(detected)).installed).toBe(false)
+  })
+
+  it.each(['EXE', 'CMD'])('does not classify an unknown Windows qoder.%s as CLI', async (extension) => {
+    const context = await fixture()
+    const bin = join(context.homeDir, 'Programs', 'Qoder')
+    await put(join(bin, `qoder.${extension}`), extension === 'EXE' ? 'MZ\u0000opaque native binary' : '@echo off\r\n')
+    const detected = { ...context, platform: 'win32' as const, env: { PATH: bin, PATHEXT: `.${extension}` } }
+    for (const client of ['qoder', 'qoder-cli'] as const)
+      expect((await getMcpClientAdapter(client).detect(detected)).installed).toBe(false)
+    await expect(resolveMcpAdapters('auto', detected)).rejects.toThrow('No supported MCP client detected')
+    expect((await resolveMcpAdapters('qoder', detected))[0].id).toBe('qoder')
+  })
+
+  it('recognizes a Qoder CLI npm shim from its package path', async () => {
+    const context = await fixture()
+    const bin = join(context.homeDir, 'bin')
+    await put(join(bin, 'qoder.CMD'), '@echo off\r\nnode "%~dp0\\node_modules\\@qoder-ai\\qodercli\\bin\\cli.js" %*\r\n')
+    const detected = { ...context, platform: 'win32' as const, env: { PATH: bin, PATHEXT: '.CMD' } }
+    expect((await getMcpClientAdapter('qoder-cli').detect(detected)).installed).toBe(true)
+    expect((await getMcpClientAdapter('qoder').detect(detected)).installed).toBe(false)
   })
 
   it('distinguishes a Qoder IDE Electron launcher from the CLI', async () => {

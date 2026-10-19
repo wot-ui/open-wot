@@ -1,6 +1,8 @@
+import type { ParseError } from 'jsonc-parser'
 import type { ChangePlan, DetectContext, McpScope, PlanContext } from './types'
-import { lstat } from 'node:fs/promises'
+import { lstat, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { parse } from 'jsonc-parser'
 import { JsonMcpClientAdapter } from './json-adapter'
 
 function cliConfigPaths(context: DetectContext, scope: McpScope): string[] {
@@ -24,7 +26,7 @@ async function cliConfigPath(context: DetectContext, scope: McpScope): Promise<s
   return paths[0]!
 }
 
-export async function assertNoCodebuddyConfigShadowing(plans: ChangePlan[], context: PlanContext): Promise<void> {
+export async function reconcileCodebuddyConfigPlans(plans: ChangePlan[], context: PlanContext): Promise<void> {
   const paths = cliConfigPaths(context, context.scope)
   const created = plans.flatMap(plan => plan.changes)
     .filter(change => change.type === 'write-file' && change.before === undefined && paths.includes(change.path))
@@ -33,7 +35,23 @@ export async function assertNoCodebuddyConfigShadowing(plans: ChangePlan[], cont
   const existing = await cliConfigPath(context, context.scope)
   const shadowing = created.find(change => paths.indexOf(change.path) < paths.indexOf(existing))
   if (shadowing) {
-    throw new Error(`Refusing to create ${shadowing.path}: it would hide existing CodeBuddy CLI configuration ${existing}. Merge or migrate that configuration before retrying, or use --client codebuddy-cli to keep its existing path.`)
+    const errors: ParseError[] = []
+    const content = await readFile(existing, 'utf8')
+    const config = parse(content.trim() ? content : '{}', errors, { allowTrailingComma: true }) as unknown
+    if (errors.length || !config || typeof config !== 'object' || Array.isArray(config))
+      throw new Error(`Cannot check CodeBuddy CLI configuration ${existing}: expected a valid JSONC object. Repair or move that file before retrying.`)
+    const servers = (config as Record<string, unknown>).mcpServers
+    // Unrelated JSON files and empty server maps have no MCP registrations to hide.
+    if (servers === undefined || (servers && typeof servers === 'object' && !Array.isArray(servers) && Object.keys(servers).length === 0)) {
+      // In an all-client install the new shared file already contains wot-ui.
+      // Do not also add it to the now-inactive legacy file, where removal would miss it.
+      for (const plan of plans) {
+        plan.changes = plan.changes.filter(change => change.path !== existing)
+        plan.requiresConfirmation = plan.changes.length > 0
+      }
+      return
+    }
+    throw new Error(`Refusing to create ${shadowing.path}: it would hide existing CodeBuddy CLI configuration ${existing}. Merge or migrate its mcpServers into ${shadowing.path} before retrying.`)
   }
 }
 

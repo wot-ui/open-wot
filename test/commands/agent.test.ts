@@ -63,6 +63,27 @@ describe('agent command', () => {
     expect(joinedStdout(stdout)).toContain('Initialize wot-ui Agent integration')
   })
 
+  it('all installs and removes shared files without stranding MCP entries or instructions', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-wot-agent-empty-legacy-'))
+    directories.push(root)
+    // Skip DeepSeek so this fixture never writes to the real DSH_HOME.
+    await mkdir(join(root, '.git'))
+    const cwd = join(root, 'sub')
+    await mkdir(cwd)
+    const legacy = join(cwd, 'mcp.json')
+    const original = '{"unrelated":true,"mcpServers":{}}'
+    await writeFile(legacy, original)
+    for (const action of ['init', 'remove']) {
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', action, '--client', 'all', '--with', 'mcp,instructions', '--cwd', cwd, '--yes'])
+      expect(process.exitCode).toBeUndefined()
+      expect(await readFile(legacy, 'utf8')).toBe(original)
+    }
+    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).not.toContain('open-wot agent instructions start')
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
+  })
+
   it('deduplicates shared Skill and instructions for all non-Claude clients', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'open-wot-agent-all-'))
     directories.push(cwd)

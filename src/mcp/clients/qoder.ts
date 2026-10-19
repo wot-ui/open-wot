@@ -34,7 +34,11 @@ async function qoderExecutable(context: DetectContext, cli: boolean): Promise<st
     }
     const ide = /qoder(?:-ide)?\.app[/\\]|[/\\]qoder-ide[/\\]/i.test(path)
       || /ELECTRON_RUN_AS_NODE|VSCODE_PATH|out[/\\]cli\.js/.test(source)
-    return ide !== cli ? executable : undefined
+    if (ide)
+      return cli ? undefined : executable
+    const cliLauncher = /[/\\]@qoder-ai[/\\]qodercli[/\\]/.test(`${path}\n${source}`)
+    // An opaque native binary or an unknown shim cannot distinguish the products.
+    return cli && cliLauncher ? executable : undefined
   }
   catch {
     return undefined

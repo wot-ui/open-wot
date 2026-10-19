@@ -6,8 +6,9 @@ import process from 'node:process'
 import { agentSkillLocationProblem, inspectAgentInstructions, inspectAgentSkill, planAgentInit, planAgentRemove } from '../application/agent-onboarding'
 import { applyChangePlan, confirmChangePlan, formatChangePlan, mergeChangePlans, toPublicChangePlan } from '../application/change-plan'
 import { doctorMcpClients, formatMcpDoctorReport, toPublicMcpDoctorReport } from '../application/mcp-doctor'
-import { detectMcpClients, inspectMcpClients, planSelectedClient, resolveMcpAdapters, toPublicClientConfigState } from '../application/mcp-onboarding'
+import { createPlanContext, detectMcpClients, inspectMcpClients, planSelectedClient, resolveMcpAdapters, toPublicClientConfigState } from '../application/mcp-onboarding'
 import { isMcpClientId, isMcpScope, MCP_CLIENT_IDS } from '../mcp/clients'
+import { reconcileCodebuddyConfigPlans } from '../mcp/clients/codebuddy'
 import { writeJson, writeLine } from '../utils/output'
 import { parsePositiveIntegerOption, printError } from './shared'
 
@@ -158,6 +159,7 @@ export function registerAgentCommand(program: Command): void {
         scope: parseScope(options.scope),
         pin: options.pin,
       }))))
+      await reconcileCodebuddyConfigPlans(plans, createPlanContext({ cwd: options.cwd, scope: parseScope(options.scope), pin: options.pin }))
       const plan = mergeChangePlans('Initialize wot-ui Agent integration', plans)
       if (!options.dryRun) {
         if (!await confirmChangePlan(plan, { yes: options.yes, cwd: options.cwd })) {
@@ -250,6 +252,7 @@ export function registerAgentCommand(program: Command): void {
       const capabilities = parseCapabilities(options.with)
       const plans = await Promise.all(clients.map(client => planSelectedClient(parseClient(options.client), client, () => planAgentRemove({
         client,
+        instructionClients: clients,
         capabilities,
         cwd: options.cwd,
         scope: parseScope(options.scope),

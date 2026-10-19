@@ -50,3 +50,14 @@
 - 新增 6 项回归测试，覆盖两种 scope 的遮蔽拒绝与旧文件安装 / 幂等 / 移除、已有更高优先级配置时正常执行 all、Agent 的 dry-run / yes 均不写文件，以及 CLI 与 IDE 独立探测。
 - 修复后全量检查通过：`pnpm lint && pnpm typecheck && pnpm test && pnpm build`，40 个测试文件、355 项测试；`pnpm site:lint && pnpm site:build` 通过；`pnpm exec openspec validate --specs` 通过。
 - 构建产物人工回归通过：MCP / Agent 两组命令分别验证 project / user，共 4 组；`all --dry-run` 和 `all --yes` 遇到旧配置冲突均返回错误且未写任何文件，随后显式 CLI 的安装、重复安装、状态和移除成功，原有服务保留。独立复跑仅 CLI 旧配置的探测复现脚本，结果只包含 `codebuddy-cli`。
+
+## DeepSeek Review 后续修复与复核
+
+- 完整性：原 18 项任务保持完成；规格补充未知启动器、空旧配置及按引用移除规则的 3 个场景，共 6 项需求、17 个场景。CLI 确认本项目无活动 change，故不重新归档；直接核对已有归档 proposal、design、tasks、spec 与当前主规格，并更新记录。
+- 正确性：P1 改为解析 JSONC 后判断已有 MCP 注册。无关对象、空文件、空注册不阻断，真实注册或损坏配置仍在写入前拒绝；错误指向实际迁移目标，不再建议切换到不相关的客户端。MCP / Agent 的整次计划去掉旧文件重复注册，避免 all 移除后残留。
+- 正确性：P3 按所选客户端的 Skill 路径移除引用，保留其他路径和区块外原文；all 移除协调同一份引用集合，重复移除无变更。共享同一 Skill 路径的 IDE / CLI 仍共享引用，README 说明影响。
+- 正确性：P4 未知 qoder 原生 EXE / CMD 不默认当作 CLI；CLI 需独立 qodercli 入口、npm 包路径或专属配置证据。回归覆盖 Windows 原生可执行文件、未知 shim 和已知 npm shim，显式选择不受影响。
+- 一致性：保持 JSONC 适配器、变更计划和事务层，无新增配置格式；同步主规格、归档规格和设计。P2 在 README 明确 CLI 1.7.0 不兼容当前路径策略，未验证最低兼容版本，不猜测版本阈值；客户端内加载限制仍保留。另明确 QODER_CONFIG_DIR 的相对路径与字面量 ~ 语义。
+- 验证：`pnpm lint && pnpm typecheck && pnpm test && pnpm build` 通过，40 个测试文件、373 项测试；`pnpm site:lint && pnpm site:build`、`pnpm exec openspec validate --specs` 和 `git diff --check` 通过。
+- 构建后人工回归：临时项目与隔离 os.homedir，MCP / Agent × project / user 共 4 组验证空旧配置下 all 的 dry-run、init、remove 无旧文件残留；Agent 验证移除 Qoder 引用后 Cursor 规则仍有效且重复移除无变更。另 4 组验证真实旧服务冲突仍在任何写入前拒绝，随后显式 CLI 生命周期成功且原服务保留。未修改真实客户端配置。
+- 复核结论：无新增未解决的实现或场景缺口；保留客户端会话加载未实测与最低兼容 CLI 版本未验证两项限制，已公开写入 README。

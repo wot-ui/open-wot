@@ -222,13 +222,19 @@ async function planInstructions(projectDir: string, client: McpClientId, remove:
   const before = await readOptional(path)
   const range = findManagedInstructionsRange(before ?? '')
   const block = range ? before!.slice(range.start, range.end) : ''
-  const references = MCP_CLIENT_IDS
+  const candidates = MCP_CLIENT_IDS
     .filter(candidate => getInstructionsTarget(projectDir, candidate) === path)
-    .filter(candidate => clients.includes(candidate) || block.includes(`\`${skillReference(candidate)}\``))
+  const existing = candidates
+    .filter(candidate => block.includes(`\`${skillReference(candidate)}\``))
     .map(skillReference)
-  const after = remove
-    ? removeManagedInstructions(before ?? '')
-    : updateManagedInstructions(before ?? '', createAgentInstructions(client, references))
+  const selected = candidates.filter(candidate => clients.includes(candidate)).map(skillReference)
+  const references = remove ? existing.filter(reference => !selected.includes(reference)) : [...existing, ...selected]
+  let after = before ?? ''
+  if (!remove || (references.length > 0 && existing.some(reference => selected.includes(reference))))
+    after = updateManagedInstructions(after, createAgentInstructions(client, references))
+  else if (references.length === 0)
+    after = removeManagedInstructions(after)
+  const removeBlock = remove && references.length === 0
   return {
     id: `${client}-instructions-${remove ? 'remove' : 'install'}`,
     summary: `${remove ? 'Remove' : 'Install'} managed Agent instructions for ${client}`,
@@ -240,8 +246,8 @@ async function planInstructions(projectDir: string, client: McpClientId, remove:
           allowedRoot: projectDir,
           before,
           after,
-          reason: `${remove ? 'Remove' : 'Update'} only the open-wot managed instructions block`,
-          preview: [remove ? '- open-wot managed instructions block' : '+ open-wot managed instructions block'],
+          reason: `${removeBlock ? 'Remove' : 'Update'} only the open-wot managed instructions block`,
+          preview: [removeBlock ? '- open-wot managed instructions block' : remove ? '~ remove selected Skill references; keep other clients' : '+ open-wot managed instructions block'],
         }],
     warnings: [],
     requiresConfirmation: (before ?? '') !== after,
@@ -278,7 +284,7 @@ export async function planAgentRemove(options: AgentPlanOptions): Promise<Change
   if (options.capabilities.includes('skill'))
     plans.push(await planSkillRemove(context.cwd, options.client))
   if (options.capabilities.includes('instructions'))
-    plans.push(await planInstructions(context.cwd, options.client, true))
+    plans.push(await planInstructions(context.cwd, options.client, true, options.instructionClients))
   const plan = mergeChangePlans(`Remove wot-ui Agent integration for ${options.client}`, plans)
   if (options.client === 'deepseek' && options.capabilities.some(capability => capability !== 'mcp'))
     plan.warnings.push('Project Skills and AGENTS.md instructions are shared with other agents; removing them affects those agents too.')

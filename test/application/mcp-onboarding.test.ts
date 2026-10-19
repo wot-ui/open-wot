@@ -23,6 +23,44 @@ async function fixture() {
 }
 
 describe('multi-client location handling', () => {
+  it.each(['claude', 'qoder', 'qoder-cli', 'all'] as const)('%s allows unrelated or empty legacy JSON without losing its contents', async (client) => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    for (const content of ['{"unrelated":true}', '{ // empty registrations\n "mcpServers": {}, }', '']) {
+      await writeFile(legacy, content)
+      expect((await planMcpInstall(client, options)).flatMap(plan => plan.changes).some(change => change.path === join(options.cwd, '.mcp.json'))).toBe(true)
+      expect(await readFile(legacy, 'utf8')).toBe(content)
+    }
+  })
+
+  it.each(['claude', 'qoder', 'qoder-cli'] as const)('%s still protects existing servers in a shared legacy file', async (client) => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    const content = '{ // keep registrations\n "mcpServers": { "other": { "command": "other" } }, }'
+    await writeFile(legacy, content)
+    await expect(planMcpInstall(client, options)).rejects.toThrow(`Merge or migrate its mcpServers into ${join(options.cwd, '.mcp.json')}`)
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
+  it.each(['project', 'user'] as const)('all leaves no inactive wot-ui entry in an empty legacy %s file', async (scope) => {
+    const options = { ...await fixture(), scope }
+    const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')
+    const content = '{"unrelated":true,"mcpServers":{}}'
+    await writeFile(legacy, content)
+    await applyChangePlan(mergeChangePlans('Install all', await planMcpInstall('all', options)))
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+    await applyChangePlan(mergeChangePlans('Remove all', await planMcpRemove('all', options)))
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+  })
+
+  it.each(['broken', 'null', '[]'])('does not bypass a legacy configuration that cannot be checked: %s', async (content) => {
+    const options = await fixture()
+    await writeFile(join(options.cwd, 'mcp.json'), content)
+    await expect(planMcpInstall('claude', options)).rejects.toThrow('expected a valid JSONC object')
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
   it.each(['project', 'user'] as const)('refuses to shadow CodeBuddy legacy %s configuration before any writes', async (scope) => {
     const options = { ...await fixture(), scope }
     const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')

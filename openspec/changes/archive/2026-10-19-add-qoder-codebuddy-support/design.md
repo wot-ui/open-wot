@@ -26,9 +26,9 @@
 
 已于 2026-10-19 完成静态核验。CodeBuddy IDE 4.12.1（本机官方应用，内置 genie 3.10.0）的 `getMcpSettingsFilePath` 使用主目录 `.codebuddy/mcp.json`，项目加载器使用 `.mcp.json`。Qoder IDE 1.34.0（[官方发行包](https://download.qoder.com/release/latest/qoder-ide_amd64.deb)，编辑器内核 1.106.3）的 `ApplicationConfigService._getProjectMcpConfigFileUris` 返回项目 `.qoder/mcp.json` 和 `.mcp.json`，`_getDefaultLocalMcpConfigFileUri` 返回主目录 `.qoder/mcp.json`，`product.json` 的 `dataFolderName` 为 `.qoder`。open-wot 为 IDE 选择公共项目 `.mcp.json`，四种适配器均支持 project / user；不管理旧版 SharedClientCache 或远程 IDE 的自定义配置文件。
 
-以上证明配置路径与加载代码，不代表已经完成登录后的交互实测。Qoder 发行包仅下载到临时目录用于静态检查，未安装或启动。CodeBuddy IDE 的启动器为 `buddy`，CLI 为 `codebuddy` / `cbc`；Qoder IDE 与新 CLI 均可能使用 `qoder`，探测读取启动器中的 Electron / VS Code 标识区分两者，并兼容 CLI 的 `qodercli`。公共项目文件不单独触发新增客户端探测。
+以上证明配置路径与加载代码，不代表已经完成登录后的交互实测。Qoder 发行包仅下载到临时目录用于静态检查，未安装或启动。CodeBuddy IDE 的启动器为 `buddy`，CLI 为 `codebuddy` / `cbc`；Qoder IDE 与新 CLI 均可能使用 `qoder`，探测读取启动器中的 Electron / VS Code 标识确认 IDE，通过 CLI npm 包路径或独立 `qodercli` 入口确认 CLI；未知原生二进制不默认判定为 CLI，需显式选择。公共项目文件不单独触发新增客户端探测。
 
-CLI 中 CodeBuddy 复用官方首个已有文件策略；在全部候选缺失时使用推荐路径。路径选择必须贯穿 detect、inspect、install 和 remove；不可在 remove 时误创建高优先级文件。Qoder 默认使用 CLI 文档的项目 `.mcp.json`，不修改其他设置层；README 说明本地或会话覆盖项可能影响加载。Qoder CLI 的 `QODER_CONFIG_DIR` 按官方配置参考作为用户配置根目录，仅影响该 CLI 用户 MCP 路径；事务边界使用该根目录并继续校验符号链接。
+本机 CLI 1.7.0 的静态代码仅使用用户 `.codebuddy.json` 与项目 `.mcp.json`，与当前官方文档不同；README 明确该版本不兼容且最低兼容版本尚未验证，不实施未经验证的版本推断。CLI 中 CodeBuddy 复用当前官方首个已有文件策略；在全部候选缺失时使用推荐路径。路径选择必须贯穿 detect、inspect、install 和 remove；不可在 remove 时误创建高优先级文件。Qoder 默认使用 CLI 文档的项目 `.mcp.json`，不修改其他设置层；README 说明本地或会话覆盖项可能影响加载。Qoder CLI 的 `QODER_CONFIG_DIR` 按官方配置参考作为用户配置根目录，仅影响该 CLI 用户 MCP 路径；事务边界使用该根目录并继续校验符号链接。
 
 替代方案：只加两个品牌 ID 并同时写入多份配置会引入不可见的全局影响；强行共用路径会产生“写入成功但客户端未加载”的假阳性，因此不采用。
 
@@ -42,9 +42,9 @@ CLI 中 CodeBuddy 复用官方首个已有文件策略；在全部候选缺失�
 
 通过小型映射统一生成目标路径与 Instructions 引用，保留已有客户端默认路径。Qoder 两种形态共享 `.qoder` 资产；CodeBuddy 两种形态共享 `.codebuddy` 资产，不复制到多个目录。
 
-重点检查 `AGENTS.md` 的共享冲突：Qoder 使用原生 Skill 路径，而原有客户端使用 `.agents`。多客户端计划必须在写入前生成包含所需引用的一个托管区块，不能通过最后写入者覆盖前者，也不能生成多个相同边界标记。只合并 open-wot 托管内容，用户文字保持原样。重复执行同一组命令必须得到相同结果。
+重点检查 `AGENTS.md` 的共享冲突：Qoder 使用原生 Skill 路径，而原有客户端使用 `.agents`。多客户端计划必须在写入前生成包含所需引用的一个托管区块，不能通过最后写入者覆盖前者，也不能生成多个相同边界标记。只合并 open-wot 托管内容，用户文字保持原样。重复执行同一组命令必须得到相同结果。移除时只摘除所选客户端的 Skill 引用，剩余引用为空时再删除区块；`all` 的移除计划与初始化一样传入完整客户端集合，避免共享文件计划冲突。同一路径的引用仍由对应客户端共享，不引入所有权追踪。
 
-项目 `.mcp.json` 同时可能供 Claude、Qoder CLI 和 CodeBuddy 使用。服务名与命令相同时沿用计划去重；若本次计划会创建更高优先级的 CodeBuddy CLI 文件并遮蔽已有配置，在写入前报告冲突，提示先合并或迁移，或单独选择 CLI 复用原路径；移除共享项提示影响范围，不为本次引入所有权数据库或新的文件格式。
+项目 `.mcp.json` 同时可能供 Claude、Qoder CLI 和 CodeBuddy 使用。服务名与命令相同时沿用计划去重；若本次计划会创建更高优先级的 CodeBuddy CLI 文件并遮蔽已有 MCP 注册，在写入前报告冲突，提示合并或迁移到明确的新路径；无关 JSON 对象或空注册不阻断，并在整次 MCP / Agent 计划中移除失去优先级的旧文件重复写入；损坏文件仍报错。移除共享项提示影响范围，不为本次引入所有权数据库或新的文件格式。
 
 ### 测试和交付
 

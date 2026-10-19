@@ -68,6 +68,38 @@ describe('agent onboarding', () => {
     expect((await inspectAgentFiles(cwd, 'qoder-cli')).skillInstalled).toBe(false)
   })
 
+  it.each([
+    ['qoder', 'cursor'],
+    ['cursor', 'qoder'],
+  ] as const)('removing %s instructions preserves %s references and user text', async (client, retained) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-shared-remove-'))
+    directories.push(cwd)
+    const options = { cwd, homeDir: cwd, capabilities: ['instructions'] as 'instructions'[] }
+    const path = join(cwd, 'AGENTS.md')
+    const prefix = '# User rules\r\n\r\n'
+    const suffix = '\n\nTail\r\n'
+    await writeFile(path, `${prefix}${createAgentInstructions(client, ['.agents/skills/wot-ui-v2/SKILL.md', '.qoder/skills/wot-ui-v2/SKILL.md'])}${suffix}`)
+    const removal = await planAgentRemove({ ...options, client })
+    expect(removal.changes[0]!.preview?.join(' ')).toContain('keep other clients')
+    await applyChangePlan(removal)
+    expect((await inspectAgentFiles(cwd, retained)).instructionsInstalled).toBe(true)
+    expect((await inspectAgentFiles(cwd, client)).instructionsInstalled).toBe(false)
+    expect(await readFile(path, 'utf8')).toBe(`${prefix}${createAgentInstructions(retained)}${suffix}`)
+    expect((await planAgentRemove({ ...options, client })).changes).toEqual([])
+  })
+
+  it('removes shared Instructions consistently for all clients in one transaction', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-all-remove-'))
+    directories.push(cwd)
+    const clients = ['cursor', 'qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'] as const
+    const options = { cwd, homeDir: cwd, capabilities: ['instructions'] as 'instructions'[], instructionClients: [...clients] }
+    await applyChangePlan(mergeChangePlans('Install all', await Promise.all(clients.map(client => planAgentInit({ ...options, client })))))
+    await applyChangePlan(mergeChangePlans('Remove all', await Promise.all(clients.map(client => planAgentRemove({ ...options, client })))))
+    for (const client of clients)
+      expect((await inspectAgentFiles(cwd, client)).instructionsInstalled).toBe(false)
+    expect(mergeChangePlans('Remove again', await Promise.all(clients.map(client => planAgentRemove({ ...options, client })))).changes).toEqual([])
+  })
+
   it('installs and removes Skill and managed instructions idempotently', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'open-wot-agent-'))
     directories.push(cwd)
