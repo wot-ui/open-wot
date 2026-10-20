@@ -1,8 +1,9 @@
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Command } from 'commander'
 import { afterEach, describe, expect, it } from 'vitest'
+import { createMcpServerDefinition } from '../../src/application/mcp-onboarding'
 import { registerAgentCommand } from '../../src/commands/agent'
 import { joinedStdout, runCli, setupCliIo } from '../helpers/cli'
 
@@ -12,6 +13,42 @@ describe('agent command', () => {
 
   afterEach(async () => {
     await Promise.all(directories.splice(0).map(path => rm(path, { recursive: true, force: true })))
+  })
+
+  it.each([['--dry-run'], ['--yes']])('rejects all before writing MCP or assets when legacy CodeBuddy configuration would be hidden (%s)', async (flag) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-agent-legacy-'))
+    directories.push(cwd)
+    const original = '{"mcpServers":{"existing":{"command":"existing","args":[]}}}'
+    await writeFile(join(cwd, 'mcp.json'), original)
+    const program = new Command()
+    registerAgentCommand(program)
+    await runCli(program, ['agent', 'init', '--client', 'all', '--cwd', cwd, flag, '--format', 'json'])
+    expect(process.exitCode).toBe(1)
+    expect(joinedStdout(stdout)).toContain('would hide existing CodeBuddy CLI configuration')
+    expect(await readdir(cwd)).toEqual(['mcp.json'])
+    expect(await readFile(join(cwd, 'mcp.json'), 'utf8')).toBe(original)
+  })
+
+  it.each(['qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'])('supports %s Agent dry-run, status and removal', async (client) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-new-agent-command-'))
+    directories.push(cwd)
+    const invoke = async (args: string[]) => {
+      stdout.mockClear()
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', ...args, '--client', client, '--cwd', cwd])
+      expect(process.exitCode).toBeUndefined()
+      return joinedStdout(stdout)
+    }
+    const preview = JSON.parse(await invoke(['init', '--dry-run', '--format', 'json']))
+    expect(preview.dryRun).toBe(true)
+    await expect(readFile(join(cwd, '.mcp.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    await invoke(['init', '--yes'])
+    expect(await invoke(['status'])).toContain(`ok ${client}: mcp=pass skill=pass instructions=pass`)
+    const reports = JSON.parse(await invoke(['doctor', '--with', 'skill,instructions', '--format', 'json']))
+    expect(reports.clients[0].capabilities).toMatchObject({ mcp: { status: 'skipped' }, skill: { status: 'pass' }, instructions: { status: 'pass' } })
+    await invoke(['remove', '--yes'])
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
   })
 
   it('installs Skill and instructions without MCP when requested', async () => {
@@ -25,6 +62,56 @@ describe('agent command', () => {
     expect(await readFile(join(cwd, '.agents', 'skills', 'wot-ui-v2', 'SKILL.md'), 'utf8')).toContain('Wot UI V2 Skill')
     expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).toContain('open-wot agent instructions start')
     expect(joinedStdout(stdout)).toContain('Initialize wot-ui Agent integration')
+  })
+
+  it('all installs and removes shared files without stranding MCP entries or instructions', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-wot-agent-empty-legacy-'))
+    directories.push(root)
+    // Skip DeepSeek so this fixture never writes to the real DSH_HOME.
+    await mkdir(join(root, '.git'))
+    const cwd = join(root, 'sub')
+    await mkdir(cwd)
+    const legacy = join(cwd, 'mcp.json')
+    const original = '{"unrelated":true,"mcpServers":{}}'
+    await writeFile(legacy, original)
+    for (const action of ['init', 'remove']) {
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', action, '--client', 'all', '--with', 'mcp,instructions', '--cwd', cwd, '--yes'])
+      expect(process.exitCode).toBeUndefined()
+      expect(await readFile(legacy, 'utf8')).toBe(original)
+    }
+    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).not.toContain('open-wot agent instructions start')
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
+  })
+
+  it('agent all migrates an identical legacy registration in its combined plan', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-wot-agent-migrate-'))
+    directories.push(root)
+    await mkdir(join(root, '.git'))
+    const cwd = join(root, 'sub')
+    await mkdir(cwd)
+    const legacy = join(cwd, 'mcp.json')
+    const original = JSON.stringify({ mcpServers: { 'wot-ui': createMcpServerDefinition() }, keep: true })
+    await writeFile(legacy, original)
+    for (const flag of ['--dry-run', '--yes']) {
+      stdout.mockClear()
+      const program = new Command()
+      registerAgentCommand(program)
+      await runCli(program, ['agent', 'init', '--client', 'all', '--with', 'mcp,instructions', '--cwd', cwd, flag, '--format', 'json'])
+      expect(process.exitCode).toBeUndefined()
+      const output = JSON.parse(joinedStdout(stdout))
+      expect(output.plan.changes.filter((change: { path: string }) => change.path === 'mcp.json')).toHaveLength(1)
+      if (flag === '--dry-run')
+        expect(await readFile(legacy, 'utf8')).toBe(original)
+    }
+    expect(JSON.parse(await readFile(legacy, 'utf8'))).toEqual({ mcpServers: {}, keep: true })
+    const program = new Command()
+    registerAgentCommand(program)
+    await runCli(program, ['agent', 'remove', '--client', 'all', '--with', 'mcp,instructions', '--cwd', cwd, '--yes'])
+    expect(process.exitCode).toBeUndefined()
+    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).not.toContain('wot-ui')
+    expect(await readFile(legacy, 'utf8')).not.toContain('wot-ui')
   })
 
   it('deduplicates shared Skill and instructions for all non-Claude clients', async () => {

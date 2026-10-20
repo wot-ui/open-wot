@@ -5,6 +5,7 @@ import process from 'node:process'
 import packageJson from '../../package.json'
 import { DeepseekProjectLocationError } from '../../runtime/deepseek-project-bridge.mjs'
 import { getMcpClientAdapter, mcpClientAdapters } from '../mcp/clients'
+import { reconcileCodebuddyConfigPlans } from '../mcp/clients/codebuddy'
 import { redactSensitiveText } from '../utils/redaction'
 
 export interface McpOperationOptions {
@@ -73,7 +74,9 @@ export async function inspectMcpClients(client: McpClientId | 'auto' | 'all', op
 export async function planMcpInstall(client: McpClientId | 'auto' | 'all', options: McpOperationOptions = {}): Promise<ChangePlan[]> {
   const adapters = await resolveMcpAdapters(client, options)
   const context = createPlanContext(options)
-  return Promise.all(adapters.map(adapter => planSelectedClient(client, adapter.id, () => adapter.planInstall(context))))
+  const plans = await Promise.all(adapters.map(adapter => planSelectedClient(client, adapter.id, () => adapter.planInstall(context))))
+  await reconcileCodebuddyConfigPlans(plans, context)
+  return plans
 }
 
 export async function planMcpRemove(client: McpClientId | 'auto' | 'all', options: McpOperationOptions = {}): Promise<ChangePlan[]> {

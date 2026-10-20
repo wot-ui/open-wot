@@ -2,8 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { createAgentInstructions, inspectAgentFiles, planAgentInit, planAgentRemove, removeManagedInstructions } from '../../src/application/agent-onboarding'
-import { applyChangePlan } from '../../src/application/change-plan'
+import { createAgentInstructions, getInstructionsTarget, getSkillTarget, inspectAgentFiles, planAgentInit, planAgentRemove, removeManagedInstructions } from '../../src/application/agent-onboarding'
+import { applyChangePlan, mergeChangePlans } from '../../src/application/change-plan'
 
 const directories: string[] = []
 
@@ -12,6 +12,94 @@ afterEach(async () => {
 })
 
 describe('agent onboarding', () => {
+  it.each(['qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'] as const)('%s installs native project assets even with user scope and preserves user edits on removal', async (client) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-native-agent-'))
+    directories.push(cwd)
+    const options = { client, capabilities: ['skill', 'instructions'] as ('skill' | 'instructions')[], cwd, homeDir: join(cwd, 'unused-home'), scope: 'user' as const }
+    const path = getInstructionsTarget(cwd, client)
+    await writeFile(path, '# User rules\n\nKeep this exact text.\n')
+    await applyChangePlan(await planAgentInit(options))
+    expect(await inspectAgentFiles(cwd, client)).toEqual({ skillInstalled: true, skillMatches: true, instructionsInstalled: true })
+    const skill = join(getSkillTarget(cwd, client), 'SKILL.md')
+    const installed = await readFile(path, 'utf8')
+    expect(installed).toContain(client.startsWith('qoder') ? '.qoder/skills/wot-ui-v2/SKILL.md' : '.codebuddy/skills/wot-ui-v2/SKILL.md')
+    expect((await planAgentInit(options)).changes).toHaveLength(0)
+    await writeFile(skill, 'User customized Skill')
+    const removal = await planAgentRemove(options)
+    expect(removal.warnings.join(' ')).toContain('Modified Skill file left unchanged')
+    expect(removal.warnings.join(' ')).toContain('shared')
+    await applyChangePlan(removal)
+    expect(await readFile(skill, 'utf8')).toBe('User customized Skill')
+    expect(await readFile(path, 'utf8')).toContain('# User rules\n\nKeep this exact text.\n')
+    expect(await readFile(path, 'utf8')).not.toContain('open-wot agent instructions start')
+    await expect(readFile(join(cwd, '.mcp.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
+  it('merges shared Instructions for all clients and preserves references on sequential init', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-shared-agent-'))
+    directories.push(cwd)
+    const clients = ['cursor', 'qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'] as const
+    const options = { cwd, homeDir: cwd, capabilities: ['skill', 'instructions'] as ('skill' | 'instructions')[] }
+    const plans = await Promise.all(clients.map(client => planAgentInit({ ...options, client, instructionClients: [...clients] })))
+    await applyChangePlan(mergeChangePlans('All', plans))
+    const content = await readFile(join(cwd, 'AGENTS.md'), 'utf8')
+    expect(content.match(/open-wot agent instructions start/g)).toHaveLength(1)
+    expect(content).toContain('.agents/skills/wot-ui-v2/SKILL.md')
+    expect(content).toContain('.qoder/skills/wot-ui-v2/SKILL.md')
+    for (const client of clients)
+      expect((await planAgentInit({ ...options, client })).changes).toEqual([])
+    const again = await Promise.all(clients.map(client => planAgentInit({ ...options, client, instructionClients: [...clients] })))
+    expect(mergeChangePlans('All', again).changes).toEqual([])
+  })
+
+  it('rolls back a new client MCP and assets if a later write fails', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-native-rollback-'))
+    directories.push(cwd)
+    const path = join(cwd, '.mcp.json')
+    const original = '{"mcpServers":{"other":{"command":"other","args":[]}}}'
+    await writeFile(path, original)
+    const plan = await planAgentInit({ client: 'qoder-cli', capabilities: ['mcp', 'skill', 'instructions'], cwd, homeDir: cwd })
+    await expect(applyChangePlan(plan, { beforeCommit: (_change, index) => {
+      if (index === 2)
+        throw new Error('injected failure')
+    } })).rejects.toThrow('injected failure')
+    expect(await readFile(path, 'utf8')).toBe(original)
+    await expect(readFile(join(cwd, 'AGENTS.md'))).rejects.toMatchObject({ code: 'ENOENT' })
+    expect((await inspectAgentFiles(cwd, 'qoder-cli')).skillInstalled).toBe(false)
+  })
+
+  it.each([
+    ['qoder', 'cursor'],
+    ['cursor', 'qoder'],
+  ] as const)('removing %s instructions preserves %s references and user text', async (client, retained) => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-shared-remove-'))
+    directories.push(cwd)
+    const options = { cwd, homeDir: cwd, capabilities: ['instructions'] as 'instructions'[] }
+    const path = join(cwd, 'AGENTS.md')
+    const prefix = '# User rules\r\n\r\n'
+    const suffix = '\n\nTail\r\n'
+    await writeFile(path, `${prefix}${createAgentInstructions(client, ['.agents/skills/wot-ui-v2/SKILL.md', '.qoder/skills/wot-ui-v2/SKILL.md'])}${suffix}`)
+    const removal = await planAgentRemove({ ...options, client })
+    expect(removal.changes[0]!.preview?.join(' ')).toContain('keep other clients')
+    await applyChangePlan(removal)
+    expect((await inspectAgentFiles(cwd, retained)).instructionsInstalled).toBe(true)
+    expect((await inspectAgentFiles(cwd, client)).instructionsInstalled).toBe(false)
+    expect(await readFile(path, 'utf8')).toBe(`${prefix}${createAgentInstructions(retained)}${suffix}`)
+    expect((await planAgentRemove({ ...options, client })).changes).toEqual([])
+  })
+
+  it('removes shared Instructions consistently for all clients in one transaction', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'open-wot-all-remove-'))
+    directories.push(cwd)
+    const clients = ['cursor', 'qoder', 'qoder-cli', 'codebuddy', 'codebuddy-cli'] as const
+    const options = { cwd, homeDir: cwd, capabilities: ['instructions'] as 'instructions'[], instructionClients: [...clients] }
+    await applyChangePlan(mergeChangePlans('Install all', await Promise.all(clients.map(client => planAgentInit({ ...options, client })))))
+    await applyChangePlan(mergeChangePlans('Remove all', await Promise.all(clients.map(client => planAgentRemove({ ...options, client })))))
+    for (const client of clients)
+      expect((await inspectAgentFiles(cwd, client)).instructionsInstalled).toBe(false)
+    expect(mergeChangePlans('Remove again', await Promise.all(clients.map(client => planAgentRemove({ ...options, client })))).changes).toEqual([])
+  })
+
   it('installs and removes Skill and managed instructions idempotently', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'open-wot-agent-'))
     directories.push(cwd)

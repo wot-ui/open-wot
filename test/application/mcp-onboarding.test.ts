@@ -1,10 +1,10 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { planAgentInit, planAgentRemove } from '../../src/application/agent-onboarding'
 import { applyChangePlan, mergeChangePlans } from '../../src/application/change-plan'
-import { planMcpInstall, planMcpRemove, planSelectedClient } from '../../src/application/mcp-onboarding'
+import { createMcpServerDefinition, planMcpInstall, planMcpRemove, planSelectedClient } from '../../src/application/mcp-onboarding'
 
 const directories: string[] = []
 afterEach(async () => {
@@ -23,17 +23,148 @@ async function fixture() {
 }
 
 describe('multi-client location handling', () => {
-  it('installs and removes the other six project clients from a Git subdirectory', async () => {
+  it.each([
+    ['claude', 'project'],
+    ['qoder', 'project'],
+    ['all', 'project'],
+    ['codebuddy', 'user'],
+    ['all', 'user'],
+  ] as const)('%s migrates an identical legacy %s wot-ui entry without leaving a stale registration', async (client, scope) => {
+    const options = { ...await fixture(), scope, pin: '1.2.3' }
+    const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')
+    const server = createMcpServerDefinition(options.pin)
+    // Object key order is irrelevant; comments and unrelated root settings survive.
+    const original = `{\r\n // keep this comment\r\n "setting": true, "mcpServers": {"wot-ui": ${JSON.stringify({ args: server.args, command: server.command })}},\r\n}\r\n`
+    await writeFile(legacy, original)
+    const plan = mergeChangePlans('Migrate', await planMcpInstall(client, options))
+    expect(await readFile(legacy, 'utf8')).toBe(original)
+    expect(plan.changes.filter(change => change.path === legacy)).toHaveLength(1)
+    await applyChangePlan(plan)
+    const retained = await readFile(legacy, 'utf8')
+    expect(retained).toContain('// keep this comment\r\n')
+    expect(retained).toContain('"setting": true')
+    expect(retained).not.toContain('"wot-ui"')
+    expect(mergeChangePlans('Again', await planMcpInstall(client, options)).changes).toEqual([])
+    const active = scope === 'project' ? join(options.cwd, '.mcp.json') : join(options.homeDir, '.codebuddy', 'mcp.json')
+    expect(JSON.parse(await readFile(active, 'utf8')).mcpServers['wot-ui']).toEqual(server)
+    await applyChangePlan(mergeChangePlans('Remove', await planMcpRemove(client, options)))
+    expect(await readFile(active, 'utf8')).not.toContain('"wot-ui"')
+    expect(await readFile(legacy, 'utf8')).toBe(retained)
+  })
+
+  it.each([
+    { command: 'custom', args: [] },
+    { ...createMcpServerDefinition(), env: { TOKEN: 'keep-me' } },
+    { ...createMcpServerDefinition(), disabled: true },
+    createMcpServerDefinition('0.1.0'),
+  ])('protects a legacy wot-ui definition with different settings: %j', async (server) => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    const content = JSON.stringify({ mcpServers: { 'wot-ui': server } })
+    await writeFile(legacy, content)
+    for (const client of ['claude', 'all'] as const)
+      await expect(planMcpInstall(client, options)).rejects.toThrow('would hide existing CodeBuddy CLI configuration')
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
+  it('rolls back both files if migrating the identical legacy registration fails', async () => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    const original = JSON.stringify({ mcpServers: { 'wot-ui': createMcpServerDefinition() } })
+    await writeFile(legacy, original)
+    const plan = mergeChangePlans('Migrate', await planMcpInstall('claude', options))
+    await expect(applyChangePlan(plan, { beforeCommit: (_change, index) => {
+      if (index === 1)
+        throw new Error('injected failure')
+    } })).rejects.toThrow('injected failure')
+    expect(await readFile(legacy, 'utf8')).toBe(original)
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
+  it.each(['claude', 'qoder', 'qoder-cli', 'all'] as const)('%s allows unrelated or empty legacy JSON without losing its contents', async (client) => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    for (const content of ['{"unrelated":true}', '{ // empty registrations\n "mcpServers": {}, }', '']) {
+      await writeFile(legacy, content)
+      expect((await planMcpInstall(client, options)).flatMap(plan => plan.changes).some(change => change.path === join(options.cwd, '.mcp.json'))).toBe(true)
+      expect(await readFile(legacy, 'utf8')).toBe(content)
+    }
+  })
+
+  it.each(['claude', 'qoder', 'qoder-cli'] as const)('%s still protects existing servers in a shared legacy file', async (client) => {
+    const options = await fixture()
+    const legacy = join(options.cwd, 'mcp.json')
+    const content = '{ // keep registrations\n "mcpServers": { "other": { "command": "other" } }, }'
+    await writeFile(legacy, content)
+    await expect(planMcpInstall(client, options)).rejects.toThrow(`Merge or migrate its mcpServers into ${join(options.cwd, '.mcp.json')}`)
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
+  it.each(['project', 'user'] as const)('all leaves no inactive wot-ui entry in an empty legacy %s file', async (scope) => {
+    const options = { ...await fixture(), scope }
+    const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')
+    const content = '{"unrelated":true,"mcpServers":{}}'
+    await writeFile(legacy, content)
+    await applyChangePlan(mergeChangePlans('Install all', await planMcpInstall('all', options)))
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+    await applyChangePlan(mergeChangePlans('Remove all', await planMcpRemove('all', options)))
+    expect(await readFile(legacy, 'utf8')).toBe(content)
+  })
+
+  it.each(['broken', 'null', '[]'])('does not bypass a legacy configuration that cannot be checked: %s', async (content) => {
+    const options = await fixture()
+    await writeFile(join(options.cwd, 'mcp.json'), content)
+    await expect(planMcpInstall('claude', options)).rejects.toThrow('expected a valid JSONC object')
+    expect(await readdir(options.cwd)).toEqual(['mcp.json'])
+  })
+
+  it.each(['project', 'user'] as const)('refuses to shadow CodeBuddy legacy %s configuration before any writes', async (scope) => {
+    const options = { ...await fixture(), scope }
+    const legacy = scope === 'project' ? join(options.cwd, 'mcp.json') : join(options.homeDir, '.codebuddy.json')
+    const original = '{"mcpServers":{"existing":{"command":"existing","args":[]}}}'
+    await writeFile(legacy, original)
+    await expect(planMcpInstall('all', options)).rejects.toThrow('would hide existing CodeBuddy CLI configuration')
+    await expect(planMcpInstall('codebuddy', options)).rejects.toThrow('would hide existing CodeBuddy CLI configuration')
+    expect(await readFile(legacy, 'utf8')).toBe(original)
+    expect(await readdir(options.cwd)).toEqual(scope === 'project' ? ['mcp.json'] : [])
+    expect(await readdir(options.homeDir)).toEqual(scope === 'user' ? ['.codebuddy.json'] : [])
+
+    // Unrelated clients remain usable; explicit CLI onboarding retains the legacy file.
+    await expect(planMcpInstall('cursor', options)).resolves.toHaveLength(1)
+    await applyChangePlan(mergeChangePlans('CLI install', await planMcpInstall('codebuddy-cli', options)))
+    expect(await readFile(legacy, 'utf8')).toContain('wot-ui')
+    expect((await planMcpInstall('codebuddy-cli', options))[0].changes).toEqual([])
+    await applyChangePlan(mergeChangePlans('CLI remove', await planMcpRemove('codebuddy-cli', options)))
+    expect(JSON.parse(await readFile(legacy, 'utf8'))).toEqual(JSON.parse(original))
+  })
+
+  it('allows all when creating an IDE file cannot shadow the active CLI user file', async () => {
+    const options = { ...await fixture(), scope: 'user' as const }
+    await mkdir(join(options.homeDir, '.codebuddy'))
+    const active = join(options.homeDir, '.codebuddy', '.mcp.json')
+    const legacy = join(options.homeDir, '.codebuddy.json')
+    await writeFile(active, '{"mcpServers":{"existing":{"command":"existing","args":[]}}}')
+    await writeFile(legacy, '{"legacy":true}')
+    await applyChangePlan(mergeChangePlans('All', await planMcpInstall('all', options)))
+    expect(Object.keys(JSON.parse(await readFile(active, 'utf8')).mcpServers)).toEqual(['existing', 'wot-ui'])
+    expect(await readFile(legacy, 'utf8')).toBe('{"legacy":true}')
+    await applyChangePlan(mergeChangePlans('Remove all', await planMcpRemove('all', options)))
+    expect(Object.keys(JSON.parse(await readFile(active, 'utf8')).mcpServers)).toEqual(['existing'])
+  })
+
+  it('installs and removes the other project clients from a Git subdirectory', async () => {
     const options = await fixture()
     const plans = await planMcpInstall('all', options)
-    expect(plans).toHaveLength(7)
+    expect(plans).toHaveLength(11)
     const skipped = plans.find(plan => plan.id === 'deepseek-skipped-location')!
     expect(skipped.changes).toEqual([])
     expect(skipped.warnings[0]).toContain('Skipped DeepSeek: Run from the Git root')
-    expect(plans.filter(plan => plan.changes.length)).toHaveLength(6)
+    expect(plans.filter(plan => plan.changes.length)).toHaveLength(10)
     await applyChangePlan(mergeChangePlans('Install all', plans))
     const remove = await planMcpRemove('all', options)
-    expect(remove.filter(plan => plan.changes.length)).toHaveLength(6)
+    expect(remove.filter(plan => plan.changes.length)).toHaveLength(10)
     expect(remove.find(plan => plan.id === skipped.id)).toEqual(skipped)
     await applyChangePlan(mergeChangePlans('Remove all', remove))
   })

@@ -61,6 +61,10 @@ Instructions     AI 在生成代码前主动查询真实组件知识
 | --- | --- | --- | --- | --- | --- | --- |
 | `claude` | `cursor` | `vscode` | `codex` | `opencode` | `antigravity` | `deepseek` |
 
+| Qoder IDE | Qoder CLI | CodeBuddy IDE | CodeBuddy Code CLI |
+| --- | --- | --- | --- |
+| `qoder` | `qoder-cli` | `codebuddy` | `codebuddy-cli` |
+
 DeepSeek Harness 同样默认按项目接入；请在 Git 根目录执行，或加 `--cwd <项目根目录>`。首次安装后重启桌面版，并重新打开项目会话。
 
 同时使用多个 AI 客户端时，可以一次完成全部项目级配置：
@@ -145,7 +149,7 @@ wot agent remove --client all --dry-run
 - 重复执行 `init` 不会重复插入配置。
 - `remove` 只移除 open-wot 管理的内容，不覆盖其他 Server 或用户配置。
 - 默认安装面向组件使用者的 `wot-ui-v2` Skill；仓库维护 Skill `wot-ui-cli` 不会默认安装。
-- `--scope user` 只改变 MCP 位置；Skill（`.agents/skills/wot-ui-v2`）和 Instructions（`AGENTS.md`）仍在项目中，可由多个 Agent 共用，移除会影响其他使用者，修改过的 Skill 文件会保留。
+- `--scope user` 只改变 MCP 位置；Skill 和 Instructions 仍在项目中，使用下文列出的客户端目录，可由多个 Agent 共用，移除会影响其他使用者，修改过的 Skill 文件会保留。
 
 只接入部分能力：
 
@@ -162,7 +166,7 @@ wot agent init --client claude --with skill,instructions
 
 1. 确认 Node.js >= 20。
 2. 安装或更新 `@wot-ui/cli@latest`；优先全局安装，不要使用 sudo。权限受限时改用 `npx -y @wot-ui/cli@latest` 执行后续命令。
-3. 识别当前客户端：Claude Code=claude、Cursor=cursor、VS Code=vscode、Codex=codex、OpenCode=opencode、Antigravity=antigravity、DeepSeek Harness=deepseek。无法确定时先询问我。
+3. 识别当前客户端：Claude Code=claude、Cursor=cursor、VS Code=vscode、Codex=codex、OpenCode=opencode、Antigravity=antigravity、DeepSeek Harness=deepseek、Qoder IDE=qoder、Qoder CLI=qoder-cli、CodeBuddy IDE=codebuddy、CodeBuddy Code CLI=codebuddy-cli。无法确定时先询问我。
 4. 默认选择 project scope；仅在需要全局共享时选择 user。DeepSeek 请在 Git 项目根目录执行，或通过 --cwd 指定该根目录。执行 `wot agent init --client <client-id> --scope <scope> --with mcp,skill,instructions --yes`。
 5. 执行 `wot agent doctor --client <client-id> --scope <scope> --with mcp,skill,instructions`。
 6. 告诉我修改了哪些文件、doctor 结果，以及是否需要重启客户端或批准 MCP。
@@ -247,6 +251,8 @@ wot mcp remove --client cursor
 | OpenCode | `opencode.json[c]` / `.opencode/opencode.json[c]` | `mcp.wot-ui` |
 | Antigravity | `.agents/mcp_config.json` | `mcpServers` |
 | DeepSeek Harness | `.dsh/wot-ui.json` | 项目声明 + 本机桥接登记 |
+| Qoder IDE / CLI | `.mcp.json` | `mcpServers` |
+| CodeBuddy IDE / CLI | `.mcp.json`（CLI 兼容已有 `mcp.json`） | `mcpServers` |
 
 ```bash
 wot mcp print --client cursor             # 只预览配置
@@ -260,6 +266,36 @@ Claude Code、Cursor、Codex、OpenCode、Antigravity 和 DeepSeek Harness 支�
 DeepSeek 项目配置会在 `$DSH_HOME`（默认 `~/.dsh`）登记本机项目，并安装共享加载桥接；标准模式按会话目录加载，各项目工具与版本独立。首次安装需重启，项目移动、新机器或声明改动后需重新 `init`，再打开会话。已有全局配置时，先执行 `wot mcp remove --client deepseek --scope user`，再按项目初始化；`--scope user` 仍写入 `cordis.patch.yml` 并对加载该用户层的 profiles 全局共享。`doctor` 的 `server-ready` 只验证服务可用，请在客户端调用 `wot_status`、`wot_list` 确认加载。
 
 Agent 接入时，OpenCode 和 Antigravity 都复用 `.agents/skills/wot-ui-v2` 与项目根目录的 `AGENTS.md`；Antigravity 1.20.5 及以上版本会读取其中的项目规则。
+
+Qoder 和 CodeBuddy 的 IDE、CLI 均支持 project / user scope，按产品形态选择 ID：
+
+```bash
+wot agent init --client qoder
+wot agent init --client qoder-cli
+wot agent init --client codebuddy
+wot agent init --client codebuddy-cli
+wot agent doctor --client qoder-cli
+wot agent doctor --client codebuddy-cli
+```
+
+| Client | user MCP | 项目 Skill | 项目 Instructions |
+| --- | --- | --- | --- |
+| `qoder` | `~/.qoder/mcp.json` | `.qoder/skills/wot-ui-v2` | `AGENTS.md` |
+| `qoder-cli` | `~/.qoder/settings.json` | `.qoder/skills/wot-ui-v2` | `AGENTS.md` |
+| `codebuddy` | `~/.codebuddy/mcp.json` | `.codebuddy/skills/wot-ui-v2` | `CODEBUDDY.md` |
+| `codebuddy-cli` | `~/.codebuddy/.mcp.json` | `.codebuddy/skills/wot-ui-v2` | `CODEBUDDY.md` |
+
+Qoder IDE 配置路径已核对官方 1.34.0 发行包，CodeBuddy IDE 已核对 4.12.1。旧版 IDE、远程 IDE 的自定义配置路径不在此适配范围内。Qoder CLI 的 `QODER_CONFIG_DIR` 可覆盖用户配置目录，建议设置为绝对路径；open-wot 将相对路径按 `--cwd` 解析，不展开环境变量值中的字面量 `~`。本地 `settings.local.json`、会话参数和工具过滤设置仍可能影响加载。
+
+CodeBuddy CLI 按[当前官方 MCP 文档](https://www.codebuddy.ai/docs/cli/mcp)中的 `~/.codebuddy/.mcp.json` → `~/.codebuddy/mcp.json` → `~/.codebuddy.json` 复用首个已有文件；项目中仅有 `mcp.json` 时也会复用，避免新建文件遮蔽原配置。**这套路径规则不兼容 CLI 1.7.0**：该版本的 user 配置固定为 `~/.codebuddy.json`，project 配置固定为 `.mcp.json`，与 IDE 共存时尤其容易写入 CLI 不读取的文件。请升级后按下文确认加载，或为旧版手动配置 MCP；open-wot 不会自动识别版本并切换路径。目前尚未验证采用新规则的最低版本，不承诺所有高于 1.7.0 的版本均兼容。
+
+如果 `all` 或其他客户端初始化将创建更高优先级的文件并遮蔽 CodeBuddy CLI 已有的 `mcpServers`，命令会在写入前报错。请先将旧文件的 MCP 服务合并或迁移到错误提示中的新路径，再重试原命令；`--dry-run` 也会检查此冲突。无关 JSON 对象、空文件或空 `mcpServers` 不阻断初始化，`all` 也不会在失去优先级的旧文件中重复写入服务。旧文件若只注册了与本次生成定义完全一致的 `wot-ui`，则自动迁移到新路径，并在同一事务中清理旧条目，保留注释和其他设置；版本、环境变量或其他字段不同仍按冲突处理。无法解析的旧文件仍需先修复或移走。
+
+这些客户端的项目 `.mcp.json` 可能与 Claude Code 共用；同品牌 IDE / CLI 也共用项目 Skill 和 Instructions。`all` 会合并相同文件的变更，移除共享项会影响其他使用者。Qoder 与其他 Agent 共用 `AGENTS.md` 时，托管区块会同时保留 `.agents` 和 `.qoder` 的 Skill 引用，供对应客户端选择；移除时只删除所选客户端对应的引用，其余引用和区块外文本保留。使用同一个 Skill 路径的客户端仍共享该引用，移除会一并影响它们。CodeBuddy 使用 `CODEBUDDY.md`，已有 `AGENTS.md` 的项目应将仍需遵守的规则引用或合并到 `CODEBUDDY.md` 中。
+
+`doctor` 对这四种客户端报告 `server-ready` 时，仅表示配置与独立 MCP 握手通过，客户端注册仍未验证。IDE 请重新加载项目或重启，在 MCP 面板确认并批准服务；CLI 请运行 `qoder mcp list` 或 `codebuddy mcp get wot-ui`，进入会话后使用 `/mcp`（Qoder 可用 `/mcp reload`），确认可以调用 `wot_status`、`wot_list`。CodeBuddy IDE 自动探测以 `buddy` 启动器为依据，不把 IDE / CLI 共用的旧配置文件当成 IDE 安装证据；未将启动器加入 PATH 或使用自定义启动器时，显式传入 `--client`。
+
+Qoder 的 IDE 与 CLI 都可能提供 `qoder` 命令。自动探测只采用可识别的 IDE 启动器、CLI npm 包路径、`qodercli` 独立入口或各自专用的配置文件；未知原生可执行文件和自定义启动器不会仅凭名字被认作 CLI。未检测到时请显式使用 `--client qoder` 或 `--client qoder-cli`，这也适用于尚未生成配置文件的原生 Qoder CLI。
 
 直接启动 stdio Server：
 
@@ -348,7 +384,7 @@ wot mcp serve                            # 语义明确的等价写法
 
 `init`、`status`、`doctor` 和 `remove` 支持：
 
-- `--client auto|all|claude|cursor|vscode|codex|opencode|antigravity`
+- `--client auto|all|claude|cursor|vscode|codex|opencode|antigravity|deepseek|qoder|qoder-cli|codebuddy|codebuddy-cli`
 - `--scope project|user`
 - `--with mcp,skill,instructions`
 - `--cwd <directory>`
